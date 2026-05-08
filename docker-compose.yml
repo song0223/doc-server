@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  doc-server:
+    build: .
+    container_name: doc-server
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      - DB_HOST=127.0.0.1
+      - DB_PORT=3306
+      - DB_DATABASE=mac_api_tester
+      - DB_USERNAME=root
+      - DB_PASSWORD=Netime@2023
+      - SERVER_PORT=8088

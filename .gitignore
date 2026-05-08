@@ -1,0 +1,27 @@
+# Build
+.build/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+
+# Swift Package Manager
+Packages/
+Package.pins
+Package.resolved
+
+# macOS
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+
+# 临时文件
+*.tar.gz
+*.zip
+
+# 日志
+*.log
