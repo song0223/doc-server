@@ -111,11 +111,7 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data := map[string]interface{}{
-		"Title":   doc.Title,
-		"Content": template.HTML(doc.HTMLContent),
-	}
-	h.templates.ExecuteTemplate(w, "doc.html", data)
+	w.Write([]byte(doc.HTMLContent))
 }
 
 func generateToken() string {
