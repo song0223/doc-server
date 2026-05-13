@@ -159,16 +159,38 @@
             letter-spacing: -0.2px;
         }
         .ep-url {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             margin-bottom: 12px;
+            background: #f5f5f7;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #e5e5ea;
         }
         .ep-url code {
-            background: #f0f1f3;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            display: inline-block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1d1d1f;
+            background: none;
+            padding: 0;
             word-break: break-all;
+            flex: 1;
         }
+        .copy-btn {
+            flex-shrink: 0;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #0071e3;
+            background: #fff;
+            border: 1px solid #0071e3;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .copy-btn:hover { background: #0071e3; color: #fff; }
+        .copy-btn:active { transform: scale(0.96); }
         .ep-desc {
             margin-bottom: 16px;
             color: #6e6e73;
@@ -325,6 +347,17 @@
         </main>
     </div>
     <script>
+        // 复制 URL
+        function copyUrl() {
+            const el = document.getElementById('epUrl');
+            if (!el) return;
+            navigator.clipboard.writeText(el.textContent).then(() => {
+                const btn = el.nextElementSibling;
+                btn.textContent = '已复制';
+                setTimeout(() => btn.textContent = '复制', 1500);
+            });
+        }
+
         // 搜索过滤
         function filterNav() {
             const filter = document.getElementById('searchInput').value.toLowerCase();

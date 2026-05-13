@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 )
@@ -195,8 +196,15 @@ func renderEndpointHTML(e *Endpoint) string {
 	b.WriteString(`<h2>` + template.HTMLEscapeString(e.Name) + `</h2>`)
 	b.WriteString(`</div>`)
 
-	// URL
-	b.WriteString(`<div class="ep-url"><code>` + template.HTMLEscapeString(e.URL) + `</code></div>`)
+	// URL 路径 + 复制按钮
+	urlPath := e.URL
+	if u, err := url.Parse(e.URL); err == nil && u.Path != "" {
+		urlPath = u.Path
+	}
+	b.WriteString(`<div class="ep-url">`)
+	b.WriteString(`<code id="epUrl">` + template.HTMLEscapeString(urlPath) + `</code>`)
+	b.WriteString(` <button class="copy-btn" onclick="copyUrl()">复制</button>`)
+	b.WriteString(`</div>`)
 
 	// 描述
 	if e.Description != "" {
