@@ -157,6 +157,7 @@ type paramInfo struct {
 func renderParamsTable(params []paramInfo) string {
 	var b strings.Builder
 	b.WriteString(`<div class="table-wrapper"><table>`)
+	b.WriteString(`<colgroup><col style="width:15%"><col style="width:8%"><col style="width:50%"><col style="width:20%"><col style="width:7%"></colgroup>`)
 	b.WriteString(`<tr><th>参数名</th><th>类型</th><th>值</th><th>说明</th><th>必填</th></tr>`)
 	for _, p := range params {
 		req := ""
