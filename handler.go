@@ -111,7 +111,12 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(doc.HTMLContent))
+
+	// 注入返回按钮
+	backButton := `<a href="/" style="position:fixed;top:12px;right:20px;z-index:9999;padding:8px 16px;background:#0071e3;color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-family:-apple-system,sans-serif;">← 返回文档列表</a>`
+	content := strings.Replace(doc.HTMLContent, "<body>", "<body>"+backButton, 1)
+
+	w.Write([]byte(content))
 }
 
 func generateToken() string {
