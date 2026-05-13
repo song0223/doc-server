@@ -70,42 +70,35 @@ swift run
 
 ## 部署到服务器
 
-### 方式一：使用部署脚本
+### 方式一：使用部署脚本（推荐）
 
 ```bash
 ./deploy.sh
 ```
 
 脚本会自动：
-1. 打包项目
-2. 上传到服务器
+1. SSH 连接到服务器
+2. 克隆或更新代码（git pull）
 3. 安装 Docker（如果需要）
 4. 构建并启动服务
 
 ### 方式二：手动部署
 
-1. **打包项目**
+1. **在服务器上克隆代码**
 ```bash
-tar -czf doc-server.tar.gz Package.swift Sources/ Dockerfile docker-compose.yml
-```
-
-2. **上传到服务器**
-```bash
-scp doc-server.tar.gz root@服务器ip:/opt/
-```
-
-3. **在服务器上部署**
-```bash
-ssh root@127.0.0.1
 cd /opt
-tar -xzf doc-server.tar.gz
+git clone https://github.com/song0223/doc-server.git
+cd doc-server
+```
+
+2. **使用 Docker 部署**
+```bash
 docker-compose up -d --build
 ```
 
-### 方式三：直接编译运行
-
+3. **或直接编译运行**
 ```bash
-# 在服务器上安装 Swift 和 MySQL 客户端
+# 安装 Swift 和 MySQL 客户端
 sudo apt-get install libmysqlclient-dev
 
 # 编译
@@ -113,6 +106,16 @@ swift build -c release
 
 # 运行
 .build/release/DocServer
+```
+
+### 更新服务器
+
+```bash
+# 使用 Docker
+./update.sh
+
+# 不使用 Docker
+./update-no-docker.sh
 ```
 
 ## 配置 Nginx 反向代理

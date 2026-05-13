@@ -1,29 +1,22 @@
 #!/bin/bash
 
 # 文档服务器部署脚本（不使用Docker）
-SERVER="127.0.0.1"
-REMOTE_DIR="/opt/doc-server"
+# 使用方法: ./deploy-no-docker.sh
 
 echo "🚀 开始部署文档服务器..."
 
-# 1. 打包项目
-echo "📦 打包项目..."
-tar -czf doc-server.tar.gz Package.swift Sources/
-
-# 2. 上传到服务器
-echo "📤 上传到服务器..."
-scp doc-server.tar.gz root@$SERVER:/tmp/
-
-# 3. 在服务器上部署
-echo "🔧 在服务器上部署..."
-ssh root@$SERVER << 'EOF'
-    # 创建目录
-    mkdir -p /opt/doc-server
-    cd /opt/doc-server
-
-    # 解压
-    tar -xzf /tmp/doc-server.tar.gz
-    rm /tmp/doc-server.tar.gz
+# 1. 在服务器上克隆或更新代码
+echo "📥 获取最新代码..."
+ssh root@服务器ip << 'EOF'
+    # 克隆或更新代码
+    if [ -d "/opt/doc-server" ]; then
+        cd /opt/doc-server
+        git pull
+    else
+        cd /opt
+        git clone https://github.com/song0223/doc-server.git
+        cd doc-server
+    fi
 
     # 安装依赖（如果没有）
     if ! command -v swift &> /dev/null; then
@@ -46,6 +39,7 @@ ssh root@$SERVER << 'EOF'
 
     # 编译
     echo "🔨 编译项目..."
+    cd /opt/doc-server
     export PATH=/opt/swift/usr/bin:$PATH
     swift build -c release
 
@@ -67,7 +61,7 @@ Environment=DB_HOST=127.0.0.1
 Environment=DB_PORT=3306
 Environment=DB_DATABASE=mac_api_tester
 Environment=DB_USERNAME=root
-Environment=DB_PASSWORD=Netime@2023
+Environment=DB_PASSWORD=
 Environment=SERVER_PORT=8088
 ExecStart=/opt/doc-server/.build/release/DocServer
 Restart=always
@@ -86,13 +80,4 @@ SERVICEEOF
     systemctl status doc-server --no-pager
 EOF
 
-# 4. 清理临时文件
-rm doc-server.tar.gz
-
 echo "🎉 部署完成！"
-echo "📋 访问地址: http://$SERVER:8088"
-echo ""
-echo "常用命令："
-echo "  查看状态: ssh root@$SERVER 'systemctl status doc-server'"
-echo "  查看日志: ssh root@$SERVER 'journalctl -u doc-server -f'"
-echo "  重启服务: ssh root@$SERVER 'systemctl restart doc-server'"
