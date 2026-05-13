@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -154,7 +155,8 @@ func renderMarkdown(md string) string {
 }
 
 func splitSections(htmlContent string) []Section {
-	re := regexp.MustCompile(`(?s)(<h2[^>]*id="([^"]*)"[^>]*>.*?</h2>)`)
+	// 匹配任意 h2 开标签（可能有 id 也可能没有）
+	re := regexp.MustCompile(`(?s)<h2[^>]*>.*?</h2>`)
 	locs := re.FindAllStringIndex(htmlContent, -1)
 
 	if len(locs) == 0 {
@@ -171,6 +173,9 @@ func splitSections(htmlContent string) []Section {
 		}
 	}
 
+	nameRe := regexp.MustCompile(`(?s)<h2[^>]*>(.*?)</h2>`)
+	tagRe := regexp.MustCompile(`<[^>]+>`)
+
 	for i, loc := range locs {
 		start := loc[0]
 		var end int
@@ -181,17 +186,11 @@ func splitSections(htmlContent string) []Section {
 		}
 
 		chunk := strings.TrimSpace(htmlContent[start:end])
-		matches := re.FindStringSubmatch(chunk)
 		name := ""
-		id := ""
-		if len(matches) > 2 {
-			id = matches[2]
-			// 从 h2 标签中提取纯文本名称
-			nameRe := regexp.MustCompile(`(?s)<h2[^>]*>(.*?)</h2>`)
-			if nm := nameRe.FindStringSubmatch(chunk); len(nm) > 1 {
-				name = strings.TrimSpace(regexp.MustCompile(`<[^>]+>`).ReplaceAllString(nm[1], ""))
-			}
+		if nm := nameRe.FindStringSubmatch(chunk); len(nm) > 1 {
+			name = strings.TrimSpace(tagRe.ReplaceAllString(nm[1], ""))
 		}
+		id := "section-" + strconv.Itoa(i)
 		sections = append(sections, Section{ID: id, Name: name, Content: template.HTML(chunk)})
 	}
 
