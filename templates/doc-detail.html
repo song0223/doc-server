@@ -112,6 +112,7 @@
             margin-left: 272px;
             padding: 32px 48px 64px;
             max-width: 960px;
+            overflow-x: hidden;
         }
 
         /* ===== Markdown 排版 ===== */
@@ -136,8 +137,8 @@
             margin-top: 28px;
             margin-bottom: 10px;
         }
-        p { margin-bottom: 12px; }
-        a { color: #0071e3; text-decoration: none; }
+        p { margin-bottom: 12px; word-break: break-word; }
+        a { color: #0071e3; text-decoration: none; word-break: break-all; }
         a:hover { text-decoration: underline; }
 
         code {
@@ -146,6 +147,7 @@
             border-radius: 5px;
             font-family: "SF Mono", Menlo, "Cascadia Code", Consolas, monospace;
             font-size: 0.88em;
+            word-break: break-all;
         }
         pre {
             background: #1d1d1f;
