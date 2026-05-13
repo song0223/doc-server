@@ -6,14 +6,12 @@
     <title>{{.Title}} - API 文档</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
             background: #f0f1f3;
             color: #1d1d1f;
             line-height: 1.6;
         }
-        .layout { min-height: 100vh; }
 
         /* ===== 侧边栏 ===== */
         .sidebar {
@@ -22,8 +20,7 @@
             background: #fff;
             border-right: 1px solid #e5e5ea;
             position: fixed;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -52,6 +49,7 @@
             margin-bottom: 10px;
             color: #1d1d1f;
         }
+        .search-box { position: relative; }
         .search-box input {
             width: 100%;
             padding: 7px 10px 7px 30px;
@@ -67,14 +65,11 @@
             box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
             background: #fff;
         }
-        .search-box { position: relative; }
         .search-box svg {
             position: absolute;
-            left: 9px;
-            top: 50%;
+            left: 9px; top: 50%;
             transform: translateY(-50%);
-            width: 14px;
-            height: 14px;
+            width: 14px; height: 14px;
             stroke: #86868b;
             pointer-events: none;
         }
@@ -96,8 +91,9 @@
             text-decoration: none;
             font-size: 13px;
             border-radius: 8px;
-            transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+            transition: background 0.2s, color 0.2s, transform 0.15s, box-shadow 0.2s;
             line-height: 1.4;
+            cursor: pointer;
         }
         .nav-list a:hover { background: #f5f5f7; color: #1d1d1f; }
         .nav-list a:active { transform: scale(0.98); }
@@ -119,7 +115,6 @@
             letter-spacing: 0.5px;
             flex-shrink: 0;
             text-transform: uppercase;
-            transition: opacity 0.2s;
         }
         .method-GET    { background: #e8f5e9; color: #2e7d32; }
         .method-POST   { background: #e3f2fd; color: #1565c0; }
@@ -147,22 +142,46 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* ===== Markdown 排版 — 紧凑 ===== */
-        h1 {
-            font-size: 26px;
-            font-weight: 700;
+        /* 接口详情样式 */
+        .ep-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             margin-bottom: 12px;
-            letter-spacing: -0.4px;
         }
-        h2 {
+        .ep-header .method-badge {
+            font-size: 12px;
+            padding: 3px 10px;
+        }
+        .ep-header h2 {
             font-size: 20px;
             font-weight: 600;
-            margin-top: 0;
-            margin-bottom: 12px;
-            padding-bottom: 6px;
-            border-bottom: 2px solid #0071e3;
+            margin: 0;
             letter-spacing: -0.2px;
         }
+        .ep-url {
+            margin-bottom: 12px;
+        }
+        .ep-url code {
+            background: #f0f1f3;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: inline-block;
+            word-break: break-all;
+        }
+        .ep-desc {
+            margin-bottom: 16px;
+            color: #6e6e73;
+            font-size: 14px;
+        }
+        .ep-status {
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #6e6e73;
+        }
+
+        /* Markdown 排版 */
         h3 {
             font-size: 15px;
             font-weight: 600;
@@ -177,9 +196,6 @@
             margin-bottom: 4px;
         }
         p { margin-bottom: 8px; word-break: break-word; }
-        a { color: #0071e3; text-decoration: none; word-break: break-all; }
-        a:hover { text-decoration: underline; }
-
         code {
             background: #f0f1f3;
             padding: 2px 5px;
@@ -202,77 +218,19 @@
         }
         pre code { background: none; color: inherit; padding: 0; font-size: inherit; word-break: normal; }
 
-        /* ===== 表格 ===== */
         .table-wrapper {
             overflow-x: auto;
             margin: 10px 0;
             border-radius: 8px;
             border: 1px solid #e5e5ea;
             background: #fff;
-            -webkit-overflow-scrolling: touch;
         }
-        .table-wrapper::-webkit-scrollbar { height: 4px; }
-        .table-wrapper::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 4px; }
-
-        table {
-            width: 100%;
-            min-width: 480px;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-        th, td {
-            padding: 8px 12px;
-            text-align: left;
-            border-bottom: 1px solid #f0f0f0;
-            vertical-align: top;
-        }
-        th {
-            background: #f8f8fa;
-            font-weight: 600;
-            font-size: 12px;
-            color: #6e6e73;
-            position: sticky;
-            top: 0;
-            white-space: nowrap;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        td {
-            font-size: 13px;
-            word-break: break-word;
-            overflow-wrap: break-word;
-        }
+        table { width: 100%; min-width: 480px; border-collapse: separate; border-spacing: 0; }
+        th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        th { background: #f8f8fa; font-weight: 600; font-size: 12px; color: #6e6e73; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.3px; }
+        td { font-size: 13px; word-break: break-word; overflow-wrap: break-word; }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: #fafafa; }
-
-        /* 长文本截断/展开 */
-        td.truncate {
-            max-width: 220px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            cursor: pointer;
-            position: relative;
-        }
-        td.truncate::after {
-            content: '';
-            display: inline-block;
-            width: 0; height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 4px solid #86868b;
-            margin-left: 5px;
-            vertical-align: middle;
-        }
-        td.truncate.expanded {
-            white-space: normal;
-            overflow: visible;
-            max-width: none;
-        }
-        td.truncate.expanded::after {
-            border-top: none;
-            border-bottom: 4px solid #86868b;
-        }
 
         blockquote {
             border-left: 3px solid #0071e3;
@@ -283,47 +241,47 @@
             color: #6e6e73;
             font-size: 13px;
         }
-        hr {
-            border: none;
-            border-top: 1px solid #e8e8ed;
-            margin: 16px 0;
-        }
-        ul, ol {
-            margin: 8px 0;
-            padding-left: 22px;
-        }
+        hr { border: none; border-top: 1px solid #e8e8ed; margin: 16px 0; }
+        ul, ol { margin: 8px 0; padding-left: 22px; }
         li { margin-bottom: 3px; }
+        a { color: #0071e3; text-decoration: none; word-break: break-all; }
+        a:hover { text-decoration: underline; }
 
-        /* ===== 移动端 ===== */
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #86868b;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px; height: 20px;
+            border: 2px solid #d2d2d7;
+            border-top-color: #0071e3;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 移动端 */
         .mobile-top {
             display: none;
-            position: sticky;
-            top: 0;
-            z-index: 20;
+            position: sticky; top: 0; z-index: 20;
             background: rgba(255,255,255,0.8);
             backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
             border-bottom: 1px solid rgba(0,0,0,0.08);
             padding: 12px 16px;
         }
         .mobile-top .back-link { margin-bottom: 0; }
-        .mobile-title {
-            font-size: 15px;
-            font-weight: 600;
-            margin-top: 8px;
-        }
+        .mobile-title { font-size: 15px; font-weight: 600; margin-top: 8px; }
 
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .mobile-top { display: block; }
-            .content {
-                margin-left: 0;
-                padding: 16px 16px 48px;
-                max-width: none;
-            }
-            h1 { font-size: 22px; }
-            h2 { font-size: 18px; }
-            .table-wrapper { border-radius: 8px; }
+            .content { margin-left: 0; padding: 16px 16px 48px; max-width: none; }
         }
     </style>
 </head>
@@ -343,8 +301,11 @@
             </div>
             <div class="nav-scroll">
                 <ul class="nav-list" id="navList">
-                    {{range $i, $s := .Sections}}
-                    {{if $s.ID}}<li><a href="#" data-index="{{$i}}" {{if eq $i 0}}class="active"{{end}}>{{if $s.Method}}<span class="method-badge method-{{$s.Method}}">{{$s.Method}}</span>{{end}}<span class="nav-name">{{$s.Name}}</span></a></li>{{end}}
+                    {{range $i, $e := .Endpoints}}
+                    <li><a data-id="{{$e.ID}}" {{if eq $i 0}}class="active"{{end}} onclick="loadEndpoint('{{$e.ID}}', this)">
+                        <span class="method-badge method-{{$e.Method}}">{{$e.Method}}</span>
+                        <span class="nav-name">{{$e.Name}}</span>
+                    </a></li>
                     {{end}}
                 </ul>
             </div>
@@ -359,11 +320,9 @@
         </div>
 
         <main class="content" id="contentArea">
-            {{range $i, $s := .Sections}}
-            <div class="section" id="section-{{$i}}" {{if ne $i 0}}style="display:none"{{end}}>
-                {{$s.Content}}
+            <div id="endpointContent">
+                <div class="loading">加载中</div>
             </div>
-            {{end}}
         </main>
     </div>
     <script>
@@ -375,35 +334,35 @@
             });
         }
 
-        // 点击展开/折叠截断单元格
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('truncate')) {
-                e.target.classList.toggle('expanded');
-            }
-        });
+        // 加载接口内容
+        function loadEndpoint(id, el) {
+            // 更新选中状态
+            document.querySelectorAll('.nav-list a').forEach(a => a.classList.remove('active'));
+            if (el) el.classList.add('active');
 
-        // 切换接口
-        document.querySelectorAll('.nav-list a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const index = this.getAttribute('data-index');
-                const current = document.querySelector('.section:not([style*="display:none"])');
-                const target = document.getElementById('section-' + index);
-                if (current === target) return;
-                // 隐藏当前，显示目标（触发动画）
-                if (current) current.style.display = 'none';
-                if (target) {
-                    target.style.display = '';
-                    // 重新触发动画
-                    target.style.animation = 'none';
-                    target.offsetHeight; // 强制回流
-                    target.style.animation = '';
-                }
-                document.querySelectorAll('.nav-list a').forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-                window.scrollTo(0, 0);
-            });
-        });
+            const container = document.getElementById('endpointContent');
+            container.innerHTML = '<div class="loading">加载中</div>';
+
+            fetch('/api/endpoint/' + id)
+                .then(r => {
+                    if (!r.ok) throw new Error('加载失败');
+                    return r.text();
+                })
+                .then(html => {
+                    container.innerHTML = '<div class="section">' + html + '</div>';
+                    window.scrollTo(0, 0);
+                })
+                .catch(() => {
+                    container.innerHTML = '<div class="loading" style="color:#c62828">加载失败，请重试</div>';
+                });
+        }
+
+        // 默认加载第一个接口
+        {{if .Endpoints}}
+        {{with index .Endpoints 0}}
+        loadEndpoint('{{.ID}}', document.querySelector('.nav-list a'));
+        {{end}}
+        {{end}}
     </script>
 </body>
 </html>

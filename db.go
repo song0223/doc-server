@@ -8,10 +8,24 @@ import (
 )
 
 type DocRecord struct {
-	ID          string
-	ProjectID   string
-	Title       string
-	HTMLContent string
+	ID        string
+	ProjectID string
+	Title     string
+}
+
+type Endpoint struct {
+	ID                 string
+	ProjectID          string
+	Name               string
+	Method             string
+	URL                string
+	Description        string
+	QueryText          string
+	HeadersText        string
+	BodyText           string
+	ResponseBody       string
+	ResponseStatusCode int
+	ResponseDuration   float64
 }
 
 type DB struct {
@@ -43,8 +57,9 @@ func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
+// FetchAllDocs 获取所有项目列表
 func (db *DB) FetchAllDocs() ([]DocRecord, error) {
-	rows, err := db.conn.Query("SELECT id, project_id, title, html_content FROM api_documents ORDER BY title")
+	rows, err := db.conn.Query("SELECT id, project_id, title FROM api_documents ORDER BY title")
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +68,7 @@ func (db *DB) FetchAllDocs() ([]DocRecord, error) {
 	var docs []DocRecord
 	for rows.Next() {
 		var doc DocRecord
-		if err := rows.Scan(&doc.ID, &doc.ProjectID, &doc.Title, &doc.HTMLContent); err != nil {
+		if err := rows.Scan(&doc.ID, &doc.ProjectID, &doc.Title); err != nil {
 			return nil, err
 		}
 		docs = append(docs, doc)
@@ -61,14 +76,65 @@ func (db *DB) FetchAllDocs() ([]DocRecord, error) {
 	return docs, nil
 }
 
-func (db *DB) FetchDoc(projectID string) (*DocRecord, error) {
-	var doc DocRecord
-	err := db.conn.QueryRow(
-		"SELECT id, project_id, title, html_content FROM api_documents WHERE project_id = ? LIMIT 1",
+// FetchProjectName 获取项目名称（从 api_documents 表）
+func (db *DB) FetchProjectName(projectID string) string {
+	var title string
+	err := db.conn.QueryRow("SELECT title FROM api_documents WHERE project_id = ? LIMIT 1", projectID).Scan(&title)
+	if err != nil {
+		return ""
+	}
+	return title
+}
+
+// FetchEndpoints 获取项目下所有接口列表
+func (db *DB) FetchEndpoints(projectID string) ([]Endpoint, error) {
+	rows, err := db.conn.Query(
+		`SELECT id, project_id, name, method, url_string,
+		 COALESCE(description,''), COALESCE(query_text,''), COALESCE(headers_text,''),
+		 COALESCE(body_text,''), COALESCE(response_body,''),
+		 COALESCE(response_status_code,0), COALESCE(response_duration,0)
+		 FROM request_documents WHERE project_id = ? ORDER BY created_at`,
 		projectID,
-	).Scan(&doc.ID, &doc.ProjectID, &doc.Title, &doc.HTMLContent)
+	)
 	if err != nil {
 		return nil, err
 	}
-	return &doc, nil
+	defer rows.Close()
+
+	var endpoints []Endpoint
+	for rows.Next() {
+		var e Endpoint
+		if err := rows.Scan(
+			&e.ID, &e.ProjectID, &e.Name, &e.Method, &e.URL,
+			&e.Description, &e.QueryText, &e.HeadersText,
+			&e.BodyText, &e.ResponseBody,
+			&e.ResponseStatusCode, &e.ResponseDuration,
+		); err != nil {
+			return nil, err
+		}
+		endpoints = append(endpoints, e)
+	}
+	return endpoints, nil
+}
+
+// FetchEndpoint 获取单个接口详情
+func (db *DB) FetchEndpoint(endpointID string) (*Endpoint, error) {
+	var e Endpoint
+	err := db.conn.QueryRow(
+		`SELECT id, project_id, name, method, url_string,
+		 COALESCE(description,''), COALESCE(query_text,''), COALESCE(headers_text,''),
+		 COALESCE(body_text,''), COALESCE(response_body,''),
+		 COALESCE(response_status_code,0), COALESCE(response_duration,0)
+		 FROM request_documents WHERE id = ?`,
+		endpointID,
+	).Scan(
+		&e.ID, &e.ProjectID, &e.Name, &e.Method, &e.URL,
+		&e.Description, &e.QueryText, &e.HeadersText,
+		&e.BodyText, &e.ResponseBody,
+		&e.ResponseStatusCode, &e.ResponseDuration,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &e, nil
 }

@@ -3,30 +3,18 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"html/template"
 	"net/http"
-	"regexp"
-	"strconv"
 	"strings"
 	"sync"
-
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
-	"github.com/gomarkdown/markdown/parser"
 )
 
 type Handler struct {
 	db        *DB
 	cfg       *Config
 	templates *template.Template
-	sessions  sync.Map // token -> true
-}
-
-type Section struct {
-	ID      string
-	Name    string
-	Method  string // GET, POST, PUT, DELETE 等
-	Content template.HTML
+	sessions  sync.Map
 }
 
 func NewHandler(db *DB, cfg *Config) *Handler {
@@ -44,6 +32,7 @@ func (h *Handler) SetupRoutes() http.Handler {
 	mux.HandleFunc("/login", h.Login)
 	mux.HandleFunc("/", h.Auth(h.Index))
 	mux.HandleFunc("/doc/", h.Auth(h.Doc))
+	mux.HandleFunc("/api/endpoint/", h.Auth(h.EndpointAPI))
 	return mux
 }
 
@@ -104,10 +93,9 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data := map[string]interface{}{
+	h.templates.ExecuteTemplate(w, "index.html", map[string]interface{}{
 		"Docs": docs,
-	}
-	h.templates.ExecuteTemplate(w, "index.html", data)
+	})
 }
 
 func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
@@ -117,139 +105,104 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	doc, err := h.db.FetchDoc(projectID)
+	// 获取项目名称
+	title := h.db.FetchProjectName(projectID)
+	if title == "" {
+		title = "API 文档"
+	}
+
+	// 获取接口列表
+	endpoints, err := h.db.FetchEndpoints(projectID)
 	if err != nil {
-		http.NotFound(w, r)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	// 按 Markdown 源码中的 ## 标题拆分，每个 Section 单独渲染
-	sections := splitAndRender(doc.HTMLContent)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	h.templates.ExecuteTemplate(w, "doc-detail.html", map[string]interface{}{
+		"Title":      title,
+		"ProjectID":  projectID,
+		"Endpoints":  endpoints,
+	})
+}
+
+// EndpointAPI 返回单个接口的 HTML 内容（AJAX）
+func (h *Handler) EndpointAPI(w http.ResponseWriter, r *http.Request) {
+	endpointID := strings.TrimPrefix(r.URL.Path, "/api/endpoint/")
+	if endpointID == "" {
+		http.Error(w, "missing id", http.StatusBadRequest)
+		return
+	}
+
+	endpoint, err := h.db.FetchEndpoint(endpointID)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data := map[string]interface{}{
-		"Title":    doc.Title,
-		"Sections": sections,
-	}
-	h.templates.ExecuteTemplate(w, "doc-detail.html", data)
+	w.Write([]byte(renderEndpointHTML(endpoint)))
 }
 
-func renderMarkdown(md string) string {
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-	p := parser.NewWithExtensions(extensions)
+func renderEndpointHTML(e *Endpoint) string {
+	var b strings.Builder
 
-	htmlFlags := html.CommonFlags | html.HrefTargetBlank
-	opts := html.RendererOptions{Flags: htmlFlags}
-	renderer := html.NewRenderer(opts)
+	// 标题行：方法 + 名称
+	b.WriteString(`<div class="ep-header">`)
+	b.WriteString(`<span class="method-badge method-` + e.Method + `">` + e.Method + `</span>`)
+	b.WriteString(`<h2>` + template.HTMLEscapeString(e.Name) + `</h2>`)
+	b.WriteString(`</div>`)
 
-	htmlStr := string(markdown.ToHTML([]byte(md), p, renderer))
-	htmlStr = strings.ReplaceAll(htmlStr, "<table>", `<div class="table-wrapper"><table>`)
-	htmlStr = strings.ReplaceAll(htmlStr, "</table>", `</table></div>`)
-	// 过滤 Markdown 内容中可能携带的完整 HTML 文档结构
-	for _, tag := range []string{"<!DOCTYPE html>", "<!doctype html>", "<html>", "</html>", "<head>", "</head>", "<body>", "</body>"} {
-		htmlStr = strings.ReplaceAll(htmlStr, tag, "")
-	}
-	return htmlStr
-}
+	// URL
+	b.WriteString(`<div class="ep-url"><code>` + template.HTMLEscapeString(e.URL) + `</code></div>`)
 
-func splitAndRender(md string) []Section {
-	methodRe := regexp.MustCompile(`(?i)^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)\b`)
-
-	// 方案1: 从 Markdown 源码按 ## 拆分
-	mdRe := regexp.MustCompile(`(?m)^##[ \t]*(.+)$`)
-	mdLocs := mdRe.FindAllStringIndex(md, -1)
-	if len(mdLocs) > 0 {
-		return buildSections(md, mdLocs, mdRe, methodRe, true)
+	// 描述
+	if e.Description != "" {
+		b.WriteString(`<div class="ep-desc"><p>` + template.HTMLEscapeString(e.Description) + `</p></div>`)
 	}
 
-	// 方案2: 先渲染为 HTML，再从 HTML 中按 <h2> 拆分
-	htmlContent := renderMarkdown(md)
-	htmlRe := regexp.MustCompile(`(?s)<h2[^>]*>(.*?)</h2>`)
-	htmlLocs := htmlRe.FindAllStringIndex(htmlContent, -1)
-	if len(htmlLocs) > 0 {
-		return buildSectionsFromHTML(htmlContent, htmlLocs, htmlRe, methodRe)
+	// 请求参数
+	if e.QueryText != "" {
+		b.WriteString(`<h3>请求参数</h3>`)
+		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.QueryText) + `</code></pre>`)
 	}
 
-	// 没有标题，整页作为一个 section
-	return []Section{{ID: "section-0", Name: "", Content: template.HTML(htmlContent)}}
-}
+	// 请求头
+	if e.HeadersText != "" {
+		b.WriteString(`<h3>请求头</h3>`)
+		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.HeadersText) + `</code></pre>`)
+	}
 
-func buildSections(md string, locs [][]int, re *regexp.Regexp, methodRe *regexp.Regexp, render bool) []Section {
-	var sections []Section
+	// 请求体
+	if e.BodyText != "" {
+		b.WriteString(`<h3>请求体</h3>`)
+		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.BodyText) + `</code></pre>`)
+	}
 
-	if locs[0][0] > 0 {
-		intro := strings.TrimSpace(md[:locs[0][0]])
-		if intro != "" {
-			content := template.HTML(intro)
-			if render {
-				content = template.HTML(renderMarkdown(intro))
+	// 响应
+	if e.ResponseBody != "" {
+		b.WriteString(`<h3>响应示例</h3>`)
+		if e.ResponseStatusCode > 0 {
+			b.WriteString(`<div class="ep-status">状态码: <code>` + http.StatusText(e.ResponseStatusCode) + `</code>`)
+			if e.ResponseDuration > 0 {
+				b.WriteString(` &nbsp;耗时: <code>`)
+				if e.ResponseDuration >= 1000 {
+					b.WriteString(strings.TrimRight(strings.TrimRight(
+						fmt.Sprintf("%.2f", e.ResponseDuration/1000), "0"), "."))
+					b.WriteString("s")
+				} else {
+					b.WriteString(strings.TrimRight(strings.TrimRight(
+						fmt.Sprintf("%.0f", e.ResponseDuration), "0"), "."))
+					b.WriteString("ms")
+				}
+				b.WriteString(`</code>`)
 			}
-			sections = append(sections, Section{ID: "", Name: "", Content: content})
+			b.WriteString(`</div>`)
 		}
+		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.ResponseBody) + `</code></pre>`)
 	}
 
-	for i, loc := range locs {
-		start := loc[0]
-		var end int
-		if i+1 < len(locs) {
-			end = locs[i+1][0]
-		} else {
-			end = len(md)
-		}
-
-		chunk := strings.TrimSpace(md[start:end])
-		matches := re.FindStringSubmatch(chunk)
-		name := ""
-		method := ""
-		if len(matches) > 1 {
-			name = strings.TrimSpace(matches[1])
-			if mm := methodRe.FindStringSubmatch(name); len(mm) > 1 {
-				method = strings.ToUpper(mm[1])
-			}
-		}
-
-		content := template.HTML(chunk)
-		if render {
-			content = template.HTML(renderMarkdown(chunk))
-		}
-		sections = append(sections, Section{ID: "section-" + strconv.Itoa(i), Name: name, Method: method, Content: content})
-	}
-	return sections
-}
-
-func buildSectionsFromHTML(htmlContent string, locs [][]int, re *regexp.Regexp, methodRe *regexp.Regexp) []Section {
-	var sections []Section
-	tagRe := regexp.MustCompile(`<[^>]+>`)
-
-	if locs[0][0] > 0 {
-		intro := strings.TrimSpace(htmlContent[:locs[0][0]])
-		if intro != "" {
-			sections = append(sections, Section{ID: "", Name: "", Content: template.HTML(intro)})
-		}
-	}
-
-	for i, loc := range locs {
-		start := loc[0]
-		var end int
-		if i+1 < len(locs) {
-			end = locs[i+1][0]
-		} else {
-			end = len(htmlContent)
-		}
-
-		chunk := strings.TrimSpace(htmlContent[start:end])
-		matches := re.FindStringSubmatch(chunk)
-		name := ""
-		method := ""
-		if len(matches) > 1 {
-			name = strings.TrimSpace(tagRe.ReplaceAllString(matches[1], ""))
-			if mm := methodRe.FindStringSubmatch(name); len(mm) > 1 {
-				method = strings.ToUpper(mm[1])
-			}
-		}
-		sections = append(sections, Section{ID: "section-" + strconv.Itoa(i), Name: name, Method: method, Content: template.HTML(chunk)})
-	}
-	return sections
+	return b.String()
 }
 
 func generateToken() string {
