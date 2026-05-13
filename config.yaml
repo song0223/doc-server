@@ -9,4 +9,4 @@ database:
   database: mac_api_tester
 
 auth:
-  password: "your-password-here"
+  password: "123456"
