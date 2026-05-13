@@ -301,9 +301,10 @@
             </div>
             <div class="nav-scroll">
                 <ul class="nav-list" id="navList">
-                    {{range $i, $doc := .Docs}}
-                    <li><a data-id="{{$doc.ID}}" {{if eq $i 0}}class="active"{{end}} onclick="loadEndpoint('{{$doc.ID}}', this)">
-                        <span class="nav-name">{{$doc.Title}}</span>
+                    {{range $i, $e := .Endpoints}}
+                    <li><a data-id="{{$e.ID}}" {{if eq $i 0}}class="active"{{end}} onclick="loadEndpoint('{{$e.ID}}', this)">
+                        <span class="method-badge method-{{$e.Method}}">{{$e.Method}}</span>
+                        <span class="nav-name">{{$e.Name}}</span>
                     </a></li>
                     {{end}}
                 </ul>
@@ -357,8 +358,8 @@
         }
 
         // 默认加载第一个接口
-        {{if .Docs}}
-        {{with index .Docs 0}}
+        {{if .Endpoints}}
+        {{with index .Endpoints 0}}
         loadEndpoint('{{.ID}}', document.querySelector('.nav-list a'));
         {{end}}
         {{end}}
