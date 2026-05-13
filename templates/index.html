@@ -167,16 +167,16 @@
         <h1>API 文档中心</h1>
     </header>
     <div class="container">
-        {{if .Docs}}
+        {{if .Projects}}
         <div class="grid">
-            {{range .Docs}}
-            <a href="/doc/{{.ProjectID}}" class="card">
+            {{range .Projects}}
+            <a href="/doc/{{.ID}}" class="card">
                 <div class="card-icon">
                     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 13h8v1.5H8V13zm0 3h8v1.5H8V16zm0-6h3v1.5H8V10z"/></svg>
                 </div>
                 <div class="card-info">
-                    <h2>{{.Title}}</h2>
-                    <p>点击查看文档</p>
+                    <h2>{{.Name}}</h2>
+                    <p>点击查看接口文档</p>
                 </div>
                 <div class="card-arrow">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>

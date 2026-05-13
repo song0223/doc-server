@@ -7,11 +7,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type DocRecord struct {
-	ID        string
-	ProjectID string
-	Title     string
-	Content   string
+type Project struct {
+	ID   string
+	Name string
 }
 
 type Endpoint struct {
@@ -59,72 +57,36 @@ func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
-// FetchAllDocs 获取所有项目列表（按 project_id 分组）
-func (db *DB) FetchAllDocs() ([]DocRecord, error) {
-	rows, err := db.conn.Query("SELECT DISTINCT project_id, title FROM api_documents ORDER BY title")
+// FetchProjects 获取所有项目
+func (db *DB) FetchProjects() ([]Project, error) {
+	rows, err := db.conn.Query("SELECT id, name FROM projects ORDER BY name")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var docs []DocRecord
+	var projects []Project
 	for rows.Next() {
-		var doc DocRecord
-		if err := rows.Scan(&doc.ProjectID, &doc.Title); err != nil {
+		var p Project
+		if err := rows.Scan(&p.ID, &p.Name); err != nil {
 			return nil, err
 		}
-		doc.ID = doc.ProjectID
-		docs = append(docs, doc)
+		projects = append(projects, p)
 	}
-	return docs, nil
+	return projects, nil
 }
 
-// FetchDocByID 根据接口 ID 获取文档
-func (db *DB) FetchDocByID(id string) (*DocRecord, error) {
-	var doc DocRecord
-	err := db.conn.QueryRow(
-		"SELECT id, project_id, title, html_content FROM api_documents WHERE id = ? LIMIT 1",
-		id,
-	).Scan(&doc.ID, &doc.ProjectID, &doc.Title, &doc.Content)
-	if err != nil {
-		return nil, err
-	}
-	return &doc, nil
-}
-
-// FetchDocsByProject 获取项目下所有接口文档
-func (db *DB) FetchDocsByProject(projectID string) ([]DocRecord, error) {
-	rows, err := db.conn.Query(
-		"SELECT id, project_id, title, html_content FROM api_documents WHERE project_id = ? ORDER BY title",
-		projectID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var docs []DocRecord
-	for rows.Next() {
-		var doc DocRecord
-		if err := rows.Scan(&doc.ID, &doc.ProjectID, &doc.Title, &doc.Content); err != nil {
-			return nil, err
-		}
-		docs = append(docs, doc)
-	}
-	return docs, nil
-}
-
-// FetchProjectName 获取项目名称（从 api_documents 表）
+// FetchProjectName 获取项目名称
 func (db *DB) FetchProjectName(projectID string) string {
-	var title string
-	err := db.conn.QueryRow("SELECT title FROM api_documents WHERE project_id = ? LIMIT 1", projectID).Scan(&title)
+	var name string
+	err := db.conn.QueryRow("SELECT name FROM projects WHERE id = ? LIMIT 1", projectID).Scan(&name)
 	if err != nil {
 		return ""
 	}
-	return title
+	return name
 }
 
-// FetchEndpoints 获取项目下所有接口列表
+// FetchEndpoints 获取项目下所有接口
 func (db *DB) FetchEndpoints(projectID string) ([]Endpoint, error) {
 	rows, err := db.conn.Query(
 		`SELECT id, project_id, name, method, url_string,

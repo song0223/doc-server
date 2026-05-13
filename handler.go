@@ -10,10 +10,6 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
-	"github.com/gomarkdown/markdown/parser"
 )
 
 type Handler struct {
@@ -92,7 +88,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	docs, err := h.db.FetchAllDocs()
+	projects, err := h.db.FetchProjects()
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -100,7 +96,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	h.templates.ExecuteTemplate(w, "index.html", map[string]interface{}{
-		"Docs": docs,
+		"Projects": projects,
 	})
 }
 
@@ -117,8 +113,8 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 		title = "API 文档"
 	}
 
-	// 获取项目下的接口文档列表
-	docs, err := h.db.FetchDocsByProject(projectID)
+	// 获取项目下的接口列表
+	endpoints, err := h.db.FetchEndpoints(projectID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -126,9 +122,9 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	h.templates.ExecuteTemplate(w, "doc-detail.html", map[string]interface{}{
-		"Title":     title,
-		"ProjectID": projectID,
-		"Docs":      docs,
+		"Title":      title,
+		"ProjectID":  projectID,
+		"Endpoints":  endpoints,
 	})
 }
 
@@ -140,14 +136,14 @@ func (h *Handler) EndpointAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	doc, err := h.db.FetchDocByID(endpointID)
+	endpoint, err := h.db.FetchEndpoint(endpointID)
 	if err != nil {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(renderMarkdown(doc.Content)))
+	w.Write([]byte(renderEndpointHTML(endpoint)))
 }
 
 func renderEndpointHTML(e *Endpoint) string {
@@ -273,19 +269,3 @@ func generateToken() string {
 	return hex.EncodeToString(b)
 }
 
-func renderMarkdown(md string) string {
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-	p := parser.NewWithExtensions(extensions)
-
-	htmlFlags := html.CommonFlags | html.HrefTargetBlank
-	opts := html.RendererOptions{Flags: htmlFlags}
-	renderer := html.NewRenderer(opts)
-
-	htmlStr := string(markdown.ToHTML([]byte(md), p, renderer))
-	htmlStr = strings.ReplaceAll(htmlStr, "<table>", `<div class="table-wrapper"><table>`)
-	htmlStr = strings.ReplaceAll(htmlStr, "</table>", `</table></div>`)
-	for _, tag := range []string{"<!DOCTYPE html>", "<!doctype html>", "<html>", "</html>", "<head>", "</head>", "<body>", "</body>"} {
-		htmlStr = strings.ReplaceAll(htmlStr, tag, "")
-	}
-	return htmlStr
-}
