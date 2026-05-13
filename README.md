@@ -65,7 +65,7 @@ swift run
 | DB_PORT | 3306 | 数据库端口 |
 | DB_DATABASE | mac_api_tester | 数据库名称 |
 | DB_USERNAME | root | 数据库用户名 |
-| DB_PASSWORD | Netime@2023 | 数据库密码 |
+| DB_PASSWORD |  | 数据库密码 |
 | SERVER_PORT | 8088 | 服务器端口 |
 
 ## 部署到服务器
