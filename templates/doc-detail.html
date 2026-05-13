@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - API 文档</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            line-height: 1.7;
+        }
+        .container { display: flex; min-height: 100vh; }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: #fff;
+            border-right: 1px solid #d2d2d7;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 20px 16px 12px;
+            border-bottom: 1px solid #d2d2d7;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+        .back-link {
+            display: inline-block;
+            font-size: 13px;
+            color: #0071e3;
+            text-decoration: none;
+            margin-bottom: 12px;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            font-size: 13px;
+            background: #f5f5f7;
+            outline: none;
+        }
+        .search-box input:focus {
+            border-color: #0071e3;
+            background: #fff;
+        }
+        .nav-list {
+            list-style: none;
+            padding: 8px;
+        }
+        .nav-list li { margin-bottom: 2px; }
+        .nav-list a {
+            display: block;
+            padding: 8px 12px;
+            color: #1d1d1f;
+            text-decoration: none;
+            font-size: 13px;
+            border-radius: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .nav-list a:hover { background: #f5f5f7; color: #0071e3; }
+        .nav-list a.active { background: #0071e3; color: #fff; }
+
+        /* 内容区 */
+        .content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 32px 48px;
+            max-width: 1000px;
+        }
+
+        /* Markdown 样式 */
+        h1 { font-size: 28px; font-weight: 700; margin-bottom: 16px; }
+        h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #0071e3;
+        }
+        h3 { font-size: 16px; font-weight: 600; margin-top: 24px; margin-bottom: 12px; }
+        p { margin-bottom: 12px; }
+        a { color: #0071e3; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        code {
+            background: #f5f5f7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: "SF Mono", Menlo, monospace;
+            font-size: 13px;
+        }
+        pre {
+            background: #1d1d1f;
+            color: #f5f5f7;
+            padding: 16px 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+        pre code { background: none; color: inherit; padding: 0; }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 16px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #d2d2d7;
+            background: #fff;
+        }
+        th, td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid #d2d2d7;
+        }
+        th {
+            background: #f5f5f7;
+            font-weight: 600;
+            font-size: 13px;
+            color: #6e6e73;
+        }
+        td { font-size: 14px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #f5f5f7; }
+
+        /* 截断样式 */
+        td.truncate {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+        td.truncate::after {
+            content: ' ▼';
+            font-size: 10px;
+            color: #86868b;
+        }
+        td.truncate.expanded {
+            white-space: normal;
+            overflow: visible;
+        }
+        td.truncate.expanded::after {
+            content: ' ▲';
+        }
+
+        blockquote {
+            border-left: 4px solid #0071e3;
+            padding: 12px 20px;
+            margin: 16px 0;
+            background: #f5f5f7;
+            border-radius: 0 6px 6px 0;
+            color: #6e6e73;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #d2d2d7;
+            margin: 24px 0;
+        }
+        ul, ol {
+            margin: 12px 0;
+            padding-left: 24px;
+        }
+        li { margin-bottom: 4px; }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .content { margin-left: 0; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="back-link">← 返回文档列表</a>
+                <div class="sidebar-title">{{.Title}}</div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索接口..." oninput="filterNav()">
+                </div>
+            </div>
+            <ul class="nav-list" id="navList">
+                {{range .Nav}}
+                <li><a href="#{{.ID}}">{{.Name}}</a></li>
+                {{end}}
+            </ul>
+        </nav>
+        <main class="content">
+            {{.Content}}
+        </main>
+    </div>
+    <script>
+        // 搜索过滤
+        function filterNav() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const items = document.querySelectorAll('#navList li');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(filter) ? '' : 'none';
+            });
+        }
+
+        // 点击展开/折叠
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('truncate')) {
+                e.target.classList.toggle('expanded');
+            }
+        });
+
+        // 平滑滚动
+        document.querySelectorAll('.nav-list a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                // 更新选中状态
+                document.querySelectorAll('.nav-list a').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

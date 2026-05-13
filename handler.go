@@ -5,8 +5,13 @@ import (
 	"encoding/hex"
 	"html/template"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 )
 
 type Handler struct {
@@ -14,6 +19,11 @@ type Handler struct {
 	cfg       *Config
 	templates *template.Template
 	sessions  sync.Map // token -> true
+}
+
+type NavItem struct {
+	ID   string
+	Name string
 }
 
 func NewHandler(db *DB, cfg *Config) *Handler {
@@ -110,13 +120,48 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 渲染 Markdown 为 HTML
+	htmlContent := renderMarkdown(doc.HTMLContent)
+
+	// 提取导航
+	navItems := extractNav(doc.HTMLContent)
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data := map[string]interface{}{
+		"Title":   doc.Title,
+		"Content": template.HTML(htmlContent),
+		"Nav":     navItems,
+	}
+	h.templates.ExecuteTemplate(w, "doc-detail.html", data)
+}
 
-	// 注入返回按钮
-	backButton := `<a href="/" style="position:fixed;top:12px;left:12px;z-index:9999;padding:4px 10px;background:#0071e3;color:#fff;text-decoration:none;border-radius:6px;font-size:12px;font-family:-apple-system,sans-serif;">← 返回</a>`
-	content := strings.Replace(doc.HTMLContent, "<body>", "<body>"+backButton, 1)
+func renderMarkdown(md string) string {
+	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+	p := parser.NewWithExtensions(extensions)
 
-	w.Write([]byte(content))
+	htmlFlags := html.CommonFlags | html.HrefTargetBlank
+	opts := html.RendererOptions{Flags: htmlFlags}
+	renderer := html.NewRenderer(opts)
+
+	return string(markdown.ToHTML([]byte(md), p, renderer))
+}
+
+func extractNav(md string) []NavItem {
+	var items []NavItem
+	re := regexp.MustCompile(`^##\s+(.+)$`)
+
+	for _, line := range strings.Split(md, "\n") {
+		matches := re.FindStringSubmatch(strings.TrimSpace(line))
+		if len(matches) > 1 {
+			name := matches[1]
+			id := strings.ToLower(name)
+			id = strings.ReplaceAll(id, " ", "-")
+			id = regexp.MustCompile(`[^a-z0-9-]`).ReplaceAllString(id, "")
+			items = append(items, NavItem{ID: id, Name: name})
+		}
+	}
+
+	return items
 }
 
 func generateToken() string {
