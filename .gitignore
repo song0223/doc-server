@@ -1,27 +1,21 @@
-# Build
-.build/
-DerivedData/
-*.xcodeproj
-*.xcworkspace
-
-# Swift Package Manager
-Packages/
-Package.pins
-Package.resolved
-
-# macOS
-.DS_Store
-*.swp
-*.swo
-*~
+# Go
+doc-server
+*.exe
+*.test
+*.out
+vendor/
 
 # IDE
-.vscode/
 .idea/
+.vscode/
+*.swp
+*.swo
 
-# 临时文件
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
 *.tar.gz
 *.zip
-
-# 日志
 *.log
