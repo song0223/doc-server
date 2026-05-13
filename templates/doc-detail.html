@@ -11,7 +11,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
             background: #f0f1f3;
             color: #1d1d1f;
-            line-height: 1.7;
+            line-height: 1.6;
         }
         .layout { min-height: 100vh; }
 
@@ -91,16 +91,22 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 10px;
+            padding: 7px 10px;
             color: #6e6e73;
             text-decoration: none;
             font-size: 13px;
             border-radius: 8px;
-            transition: background 0.15s, color 0.15s;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
             line-height: 1.4;
         }
         .nav-list a:hover { background: #f5f5f7; color: #1d1d1f; }
-        .nav-list a.active { background: #0071e3; color: #fff; font-weight: 500; }
+        .nav-list a:active { transform: scale(0.98); }
+        .nav-list a.active {
+            background: #0071e3;
+            color: #fff;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,113,227,0.25);
+        }
         .nav-list a.active .method-badge { opacity: 0.9; }
 
         /* HTTP 方法标签 */
@@ -113,6 +119,7 @@
             letter-spacing: 0.5px;
             flex-shrink: 0;
             text-transform: uppercase;
+            transition: opacity 0.2s;
         }
         .method-GET    { background: #e8f5e9; color: #2e7d32; }
         .method-POST   { background: #e3f2fd; color: #1565c0; }
@@ -128,52 +135,67 @@
         /* ===== 内容区 ===== */
         .content {
             margin-left: 280px;
-            padding: 32px 48px 64px;
+            padding: 28px 40px 64px;
+            max-width: 880px;
             overflow-x: hidden;
         }
 
-        /* ===== Markdown 排版 ===== */
+        /* Section 切换动画 */
+        .section { animation: sectionIn 0.25s ease-out; }
+        @keyframes sectionIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Markdown 排版 — 紧凑 ===== */
         h1 {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 700;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             letter-spacing: -0.4px;
         }
         h2 {
-            font-size: 21px;
+            font-size: 20px;
             font-weight: 600;
-            margin-top: 44px;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
+            margin-top: 0;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
             border-bottom: 2px solid #0071e3;
             letter-spacing: -0.2px;
         }
         h3 {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            margin-top: 28px;
-            margin-bottom: 10px;
+            margin-top: 16px;
+            margin-bottom: 6px;
+            color: #1d1d1f;
         }
-        p { margin-bottom: 12px; word-break: break-word; }
+        h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+        p { margin-bottom: 8px; word-break: break-word; }
         a { color: #0071e3; text-decoration: none; word-break: break-all; }
         a:hover { text-decoration: underline; }
 
         code {
             background: #f0f1f3;
-            padding: 2px 6px;
-            border-radius: 5px;
+            padding: 2px 5px;
+            border-radius: 4px;
             font-family: "SF Mono", Menlo, "Cascadia Code", Consolas, monospace;
-            font-size: 0.88em;
+            font-size: 0.85em;
             word-break: break-all;
         }
         pre {
             background: #1d1d1f;
             color: #f5f5f7;
-            padding: 16px 20px;
-            border-radius: 10px;
-            margin: 16px 0;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin: 10px 0;
             font-size: 13px;
-            line-height: 1.6;
+            line-height: 1.5;
             white-space: pre-wrap;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -183,9 +205,9 @@
         /* ===== 表格 ===== */
         .table-wrapper {
             overflow-x: auto;
-            margin: 16px 0;
-            border-radius: 10px;
-            border: 1px solid #d2d2d7;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #e5e5ea;
             background: #fff;
             -webkit-overflow-scrolling: touch;
         }
@@ -199,22 +221,24 @@
             border-spacing: 0;
         }
         th, td {
-            padding: 10px 14px;
+            padding: 8px 12px;
             text-align: left;
-            border-bottom: 1px solid #e8e8ed;
+            border-bottom: 1px solid #f0f0f0;
             vertical-align: top;
         }
         th {
             background: #f8f8fa;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             color: #6e6e73;
             position: sticky;
             top: 0;
             white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
         td {
-            font-size: 14px;
+            font-size: 13px;
             word-break: break-word;
             overflow-wrap: break-word;
         }
@@ -236,8 +260,8 @@
             width: 0; height: 0;
             border-left: 4px solid transparent;
             border-right: 4px solid transparent;
-            border-top: 5px solid #86868b;
-            margin-left: 6px;
+            border-top: 4px solid #86868b;
+            margin-left: 5px;
             vertical-align: middle;
         }
         td.truncate.expanded {
@@ -247,28 +271,28 @@
         }
         td.truncate.expanded::after {
             border-top: none;
-            border-bottom: 5px solid #86868b;
+            border-bottom: 4px solid #86868b;
         }
 
         blockquote {
             border-left: 3px solid #0071e3;
-            padding: 12px 18px;
-            margin: 16px 0;
+            padding: 10px 14px;
+            margin: 10px 0;
             background: #f8f8fa;
-            border-radius: 0 8px 8px 0;
+            border-radius: 0 6px 6px 0;
             color: #6e6e73;
-            font-size: 14px;
+            font-size: 13px;
         }
         hr {
             border: none;
             border-top: 1px solid #e8e8ed;
-            margin: 28px 0;
+            margin: 16px 0;
         }
         ul, ol {
-            margin: 12px 0;
-            padding-left: 24px;
+            margin: 8px 0;
+            padding-left: 22px;
         }
-        li { margin-bottom: 4px; }
+        li { margin-bottom: 3px; }
 
         /* ===== 移动端 ===== */
         .mobile-top {
@@ -295,6 +319,7 @@
             .content {
                 margin-left: 0;
                 padding: 16px 16px 48px;
+                max-width: none;
             }
             h1 { font-size: 22px; }
             h2 { font-size: 18px; }
@@ -357,14 +382,23 @@
             }
         });
 
-        // 切换接口：点击导航项显示对应 section
+        // 切换接口
         document.querySelectorAll('.nav-list a').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const index = this.getAttribute('data-index');
-                document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+                const current = document.querySelector('.section:not([style*="display:none"])');
                 const target = document.getElementById('section-' + index);
-                if (target) target.style.display = '';
+                if (current === target) return;
+                // 隐藏当前，显示目标（触发动画）
+                if (current) current.style.display = 'none';
+                if (target) {
+                    target.style.display = '';
+                    // 重新触发动画
+                    target.style.animation = 'none';
+                    target.offsetHeight; // 强制回流
+                    target.style.animation = '';
+                }
                 document.querySelectorAll('.nav-list a').forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
                 window.scrollTo(0, 0);

@@ -25,6 +25,11 @@
             padding: 36px 32px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.06);
             border: 1px solid rgba(0,0,0,0.06);
+            animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes cardEnter {
+            from { opacity: 0; transform: translateY(20px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
         .logo {
             width: 48px;
@@ -116,7 +121,7 @@
             background: #0077ed;
         }
         button[type="submit"]:active {
-            transform: scale(0.98);
+            transform: scale(0.97);
         }
         .error {
             background: #fef2f2;
