@@ -8,7 +8,6 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"sync"
 )
@@ -284,7 +283,7 @@ func renderEndpointHTML(e *Endpoint) string {
 			}
 			b.WriteString(`</div>`)
 		}
-		b.WriteString(`<pre><code>` + highlightJSON(e.ResponseBody) + `</code></pre>`)
+		b.WriteString(`<pre><code class="json">` + template.HTMLEscapeString(e.ResponseBody) + `</code></pre>`)
 	}
 
 	// 响应字段
@@ -311,13 +310,6 @@ func renderEndpointHTML(e *Endpoint) string {
 	}
 
 	return b.String()
-}
-
-func highlightJSON(s string) string {
-	s = template.HTMLEscapeString(s)
-	re := regexp.MustCompile(`&quot;([^&]*?)&quot;\s*:`)
-	s = re.ReplaceAllString(s, `<span class="jkey">&quot;$1&quot;</span>:`)
-	return s
 }
 
 func generateToken() string {
