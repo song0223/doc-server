@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"html/template"
-	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -154,33 +153,40 @@ func renderMarkdown(md string) string {
 }
 
 func splitAndRender(md string) []Section {
-	// 兼容 \r\n 和 \n，## 后允许0个或多个空格
-	re := regexp.MustCompile(`(?m)^##[ \t]*(.+)$`)
-	locs := re.FindAllStringIndex(md, -1)
+	methodRe := regexp.MustCompile(`(?i)^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)\b`)
 
-	log.Printf("[splitAndRender] content length=%d, found %d h2 headings", len(md), len(locs))
-
-	if len(locs) == 0 {
-		// 打印前 500 字符帮助调试
-		preview := md
-		if len(preview) > 500 {
-			preview = preview[:500]
-		}
-		log.Printf("[splitAndRender] no h2 found, preview: %q", preview)
-		return []Section{{ID: "section-0", Name: "", Content: template.HTML(renderMarkdown(md))}}
+	// 方案1: 从 Markdown 源码按 ## 拆分
+	mdRe := regexp.MustCompile(`(?m)^##[ \t]*(.+)$`)
+	mdLocs := mdRe.FindAllStringIndex(md, -1)
+	if len(mdLocs) > 0 {
+		return buildSections(md, mdLocs, mdRe, methodRe, true)
 	}
 
+	// 方案2: 先渲染为 HTML，再从 HTML 中按 <h2> 拆分
+	htmlContent := renderMarkdown(md)
+	htmlRe := regexp.MustCompile(`(?s)<h2[^>]*>(.*?)</h2>`)
+	htmlLocs := htmlRe.FindAllStringIndex(htmlContent, -1)
+	if len(htmlLocs) > 0 {
+		return buildSectionsFromHTML(htmlContent, htmlLocs, htmlRe, methodRe)
+	}
+
+	// 没有标题，整页作为一个 section
+	return []Section{{ID: "section-0", Name: "", Content: template.HTML(htmlContent)}}
+}
+
+func buildSections(md string, locs [][]int, re *regexp.Regexp, methodRe *regexp.Regexp, render bool) []Section {
 	var sections []Section
 
-	// h2 之前的内容作为简介
 	if locs[0][0] > 0 {
 		intro := strings.TrimSpace(md[:locs[0][0]])
 		if intro != "" {
-			sections = append(sections, Section{ID: "", Name: "", Content: template.HTML(renderMarkdown(intro))})
+			content := template.HTML(intro)
+			if render {
+				content = template.HTML(renderMarkdown(intro))
+			}
+			sections = append(sections, Section{ID: "", Name: "", Content: content})
 		}
 	}
-
-	methodRe := regexp.MustCompile(`(?i)^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)\b`)
 
 	for i, loc := range locs {
 		start := loc[0]
@@ -192,8 +198,6 @@ func splitAndRender(md string) []Section {
 		}
 
 		chunk := strings.TrimSpace(md[start:end])
-
-		// 提取标题文本
 		matches := re.FindStringSubmatch(chunk)
 		name := ""
 		method := ""
@@ -204,11 +208,47 @@ func splitAndRender(md string) []Section {
 			}
 		}
 
-		log.Printf("[splitAndRender] section %d: method=%q name=%q", i, method, name)
-		id := "section-" + strconv.Itoa(i)
-		sections = append(sections, Section{ID: id, Name: name, Method: method, Content: template.HTML(renderMarkdown(chunk))})
+		content := template.HTML(chunk)
+		if render {
+			content = template.HTML(renderMarkdown(chunk))
+		}
+		sections = append(sections, Section{ID: "section-" + strconv.Itoa(i), Name: name, Method: method, Content: content})
+	}
+	return sections
+}
+
+func buildSectionsFromHTML(htmlContent string, locs [][]int, re *regexp.Regexp, methodRe *regexp.Regexp) []Section {
+	var sections []Section
+	tagRe := regexp.MustCompile(`<[^>]+>`)
+
+	if locs[0][0] > 0 {
+		intro := strings.TrimSpace(htmlContent[:locs[0][0]])
+		if intro != "" {
+			sections = append(sections, Section{ID: "", Name: "", Content: template.HTML(intro)})
+		}
 	}
 
+	for i, loc := range locs {
+		start := loc[0]
+		var end int
+		if i+1 < len(locs) {
+			end = locs[i+1][0]
+		} else {
+			end = len(htmlContent)
+		}
+
+		chunk := strings.TrimSpace(htmlContent[start:end])
+		matches := re.FindStringSubmatch(chunk)
+		name := ""
+		method := ""
+		if len(matches) > 1 {
+			name = strings.TrimSpace(tagRe.ReplaceAllString(matches[1], ""))
+			if mm := methodRe.FindStringSubmatch(name); len(mm) > 1 {
+				method = strings.ToUpper(mm[1])
+			}
+		}
+		sections = append(sections, Section{ID: "section-" + strconv.Itoa(i), Name: name, Method: method, Content: template.HTML(chunk)})
+	}
 	return sections
 }
 
