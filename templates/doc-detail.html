@@ -6,175 +6,243 @@
     <title>{{.Title}} - API 文档</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-            background: #f5f5f7;
+            background: #f0f1f3;
             color: #1d1d1f;
             line-height: 1.7;
         }
-        .container { display: flex; min-height: 100vh; }
+        .layout { min-height: 100vh; }
 
-        /* 侧边栏 */
+        /* ===== 侧边栏 ===== */
         .sidebar {
-            width: 280px;
-            min-width: 280px;
+            width: 272px;
+            min-width: 272px;
             background: #fff;
-            border-right: 1px solid #d2d2d7;
+            border-right: 1px solid #e5e5ea;
             position: fixed;
+            top: 0;
+            left: 0;
             height: 100vh;
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
         }
         .sidebar-header {
-            padding: 20px 16px 12px;
-            border-bottom: 1px solid #d2d2d7;
-            position: sticky;
-            top: 0;
-            background: #fff;
-            z-index: 1;
+            padding: 16px 16px 12px;
+            border-bottom: 1px solid #e5e5ea;
+            flex-shrink: 0;
         }
         .back-link {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             font-size: 13px;
             color: #0071e3;
             text-decoration: none;
             margin-bottom: 12px;
+            transition: opacity 0.15s;
         }
-        .back-link:hover { text-decoration: underline; }
+        .back-link:hover { opacity: 0.7; }
+        .back-link svg { width: 14px; height: 14px; }
         .sidebar-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            color: #1d1d1f;
         }
         .search-box input {
             width: 100%;
-            padding: 8px 12px;
+            padding: 7px 10px 7px 30px;
             border: 1px solid #d2d2d7;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 13px;
             background: #f5f5f7;
             outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
         .search-box input:focus {
             border-color: #0071e3;
+            box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
             background: #fff;
         }
-        .nav-list {
-            list-style: none;
+        .search-box {
+            position: relative;
+        }
+        .search-box svg {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            stroke: #86868b;
+            pointer-events: none;
+        }
+        .nav-scroll {
+            flex: 1;
+            overflow-y: auto;
             padding: 8px;
         }
-        .nav-list li { margin-bottom: 2px; }
+        .nav-scroll::-webkit-scrollbar { width: 4px; }
+        .nav-scroll::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 4px; }
+        .nav-list {
+            list-style: none;
+        }
+        .nav-list li { margin-bottom: 1px; }
         .nav-list a {
             display: block;
             padding: 8px 12px;
-            color: #1d1d1f;
+            color: #6e6e73;
             text-decoration: none;
             font-size: 13px;
-            border-radius: 6px;
+            border-radius: 8px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            transition: background 0.15s, color 0.15s;
+            line-height: 1.4;
         }
-        .nav-list a:hover { background: #f5f5f7; color: #0071e3; }
-        .nav-list a.active { background: #0071e3; color: #fff; }
+        .nav-list a:hover { background: #f5f5f7; color: #1d1d1f; }
+        .nav-list a.active { background: #0071e3; color: #fff; font-weight: 500; }
 
-        /* 内容区 */
+        /* ===== 内容区 ===== */
         .content {
-            flex: 1;
-            margin-left: 280px;
-            padding: 32px 48px;
-            max-width: 1000px;
+            margin-left: 272px;
+            padding: 32px 48px 64px;
+            max-width: 960px;
         }
 
-        /* Markdown 样式 */
-        h1 { font-size: 28px; font-weight: 700; margin-bottom: 16px; }
+        /* ===== Markdown 排版 ===== */
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.4px;
+        }
         h2 {
-            font-size: 22px;
+            font-size: 21px;
             font-weight: 600;
-            margin-top: 40px;
+            margin-top: 44px;
             margin-bottom: 16px;
             padding-bottom: 8px;
             border-bottom: 2px solid #0071e3;
+            letter-spacing: -0.2px;
         }
-        h3 { font-size: 16px; font-weight: 600; margin-top: 24px; margin-bottom: 12px; }
+        h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 28px;
+            margin-bottom: 10px;
+        }
         p { margin-bottom: 12px; }
         a { color: #0071e3; text-decoration: none; }
         a:hover { text-decoration: underline; }
 
         code {
-            background: #f5f5f7;
+            background: #f0f1f3;
             padding: 2px 6px;
-            border-radius: 4px;
-            font-family: "SF Mono", Menlo, monospace;
-            font-size: 13px;
+            border-radius: 5px;
+            font-family: "SF Mono", Menlo, "Cascadia Code", Consolas, monospace;
+            font-size: 0.88em;
         }
         pre {
             background: #1d1d1f;
             color: #f5f5f7;
             padding: 16px 20px;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow-x: auto;
             margin: 16px 0;
+            font-size: 13px;
+            line-height: 1.6;
         }
-        pre code { background: none; color: inherit; padding: 0; }
+        pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+        /* ===== 表格 — 核心修复 ===== */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 16px 0;
+            border-radius: 10px;
+            border: 1px solid #d2d2d7;
+            background: #fff;
+            -webkit-overflow-scrolling: touch;
+        }
+        .table-wrapper::-webkit-scrollbar { height: 4px; }
+        .table-wrapper::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 4px; }
 
         table {
             width: 100%;
+            min-width: 480px;
             border-collapse: separate;
             border-spacing: 0;
-            margin: 16px 0;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #d2d2d7;
-            background: #fff;
         }
         th, td {
             padding: 10px 14px;
             text-align: left;
-            border-bottom: 1px solid #d2d2d7;
+            border-bottom: 1px solid #e8e8ed;
+            vertical-align: top;
         }
         th {
-            background: #f5f5f7;
+            background: #f8f8fa;
             font-weight: 600;
             font-size: 13px;
             color: #6e6e73;
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
         }
-        td { font-size: 14px; }
+        td {
+            font-size: 14px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
         tr:last-child td { border-bottom: none; }
-        tr:hover { background: #f5f5f7; }
+        tr:hover td { background: #fafafa; }
 
-        /* 截断样式 */
+        /* 长文本截断/展开 */
         td.truncate {
-            max-width: 200px;
+            max-width: 220px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             cursor: pointer;
+            position: relative;
         }
         td.truncate::after {
-            content: ' ▼';
-            font-size: 10px;
-            color: #86868b;
+            content: '';
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid #86868b;
+            margin-left: 6px;
+            vertical-align: middle;
         }
         td.truncate.expanded {
             white-space: normal;
             overflow: visible;
+            max-width: none;
         }
         td.truncate.expanded::after {
-            content: ' ▲';
+            border-top: none;
+            border-bottom: 5px solid #86868b;
         }
 
         blockquote {
-            border-left: 4px solid #0071e3;
-            padding: 12px 20px;
+            border-left: 3px solid #0071e3;
+            padding: 12px 18px;
             margin: 16px 0;
-            background: #f5f5f7;
-            border-radius: 0 6px 6px 0;
+            background: #f8f8fa;
+            border-radius: 0 8px 8px 0;
             color: #6e6e73;
+            font-size: 14px;
         }
         hr {
             border: none;
-            border-top: 1px solid #d2d2d7;
-            margin: 24px 0;
+            border-top: 1px solid #e8e8ed;
+            margin: 28px 0;
         }
         ul, ol {
             margin: 12px 0;
@@ -182,29 +250,69 @@
         }
         li { margin-bottom: 4px; }
 
-        /* 响应式 */
+        /* ===== 移动端 ===== */
+        .mobile-top {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            padding: 12px 16px;
+        }
+        .mobile-top .back-link { margin-bottom: 0; }
+        .mobile-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
         @media (max-width: 768px) {
             .sidebar { display: none; }
-            .content { margin-left: 0; padding: 20px; }
+            .mobile-top { display: block; }
+            .content {
+                margin-left: 0;
+                padding: 16px 16px 48px;
+            }
+            h1 { font-size: 22px; }
+            h2 { font-size: 18px; }
+            .table-wrapper { border-radius: 8px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="layout">
         <nav class="sidebar">
             <div class="sidebar-header">
-                <a href="/" class="back-link">← 返回文档列表</a>
+                <a href="/" class="back-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+                    返回文档列表
+                </a>
                 <div class="sidebar-title">{{.Title}}</div>
                 <div class="search-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                     <input type="text" id="searchInput" placeholder="搜索接口..." oninput="filterNav()">
                 </div>
             </div>
-            <ul class="nav-list" id="navList">
-                {{range .Nav}}
-                <li><a href="#{{.ID}}">{{.Name}}</a></li>
-                {{end}}
-            </ul>
+            <div class="nav-scroll">
+                <ul class="nav-list" id="navList">
+                    {{range .Nav}}
+                    <li><a href="#{{.ID}}">{{.Name}}</a></li>
+                    {{end}}
+                </ul>
+            </div>
         </nav>
+
+        <div class="mobile-top">
+            <a href="/" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+                返回文档列表
+            </a>
+            <div class="mobile-title">{{.Title}}</div>
+        </div>
+
         <main class="content">
             {{.Content}}
         </main>
@@ -212,23 +320,20 @@
     <script>
         // 搜索过滤
         function filterNav() {
-            const input = document.getElementById('searchInput');
-            const filter = input.value.toLowerCase();
-            const items = document.querySelectorAll('#navList li');
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(filter) ? '' : 'none';
+            const filter = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('#navList li').forEach(item => {
+                item.style.display = item.textContent.toLowerCase().includes(filter) ? '' : 'none';
             });
         }
 
-        // 点击展开/折叠
+        // 点击展开/折叠截断单元格
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('truncate')) {
                 e.target.classList.toggle('expanded');
             }
         });
 
-        // 平滑滚动
+        // 平滑滚动 + 选中状态
         document.querySelectorAll('.nav-list a').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -236,9 +341,33 @@
                 if (target) {
                     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-                // 更新选中状态
                 document.querySelectorAll('.nav-list a').forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
+            });
+        });
+
+        // 滚动时自动高亮当前章节
+        const headings = [];
+        document.querySelectorAll('.nav-list a').forEach(a => {
+            const id = a.getAttribute('href').slice(1);
+            const el = document.getElementById(id);
+            if (el) headings.push({ el, link: a });
+        });
+
+        let ticking = false;
+        window.addEventListener('scroll', function() {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(() => {
+                let current = headings[0];
+                for (const h of headings) {
+                    if (h.el.getBoundingClientRect().top <= 80) current = h;
+                }
+                if (current) {
+                    document.querySelectorAll('.nav-list a').forEach(l => l.classList.remove('active'));
+                    current.link.classList.add('active');
+                }
+                ticking = false;
             });
         });
     </script>

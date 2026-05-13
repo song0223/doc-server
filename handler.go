@@ -143,7 +143,14 @@ func renderMarkdown(md string) string {
 	opts := html.RendererOptions{Flags: htmlFlags}
 	renderer := html.NewRenderer(opts)
 
-	return string(markdown.ToHTML([]byte(md), p, renderer))
+	htmlStr := string(markdown.ToHTML([]byte(md), p, renderer))
+	htmlStr = strings.ReplaceAll(htmlStr, "<table>", `<div class="table-wrapper"><table>`)
+	htmlStr = strings.ReplaceAll(htmlStr, "</table>", `</table></div>`)
+	// 过滤 Markdown 内容中可能携带的完整 HTML 文档结构
+	for _, tag := range []string{"<!DOCTYPE html>", "<!doctype html>", "<html>", "</html>", "<head>", "</head>", "<body>", "</body>"} {
+		htmlStr = strings.ReplaceAll(htmlStr, tag, "")
+	}
+	return htmlStr
 }
 
 func extractNav(md string) []NavItem {
