@@ -3,7 +3,7 @@
 # 文档服务器部署脚本
 # 使用方法: ./deploy.sh
 
-SERVER="47.100.236.45"  # 服务器IP，用于SSH连接
+SERVER="127.0.0.1"  # 服务器IP，用于SSH连接
 REMOTE_DIR="/opt/doc-server"
 
 echo "🚀 开始部署文档服务器..."

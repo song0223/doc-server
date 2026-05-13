@@ -61,7 +61,7 @@ swift run
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| DB_HOST | 47.100.236.45 | 数据库地址 |
+| DB_HOST | 127.0.0.1 | 数据库地址 |
 | DB_PORT | 3306 | 数据库端口 |
 | DB_DATABASE | mac_api_tester | 数据库名称 |
 | DB_USERNAME | root | 数据库用户名 |
@@ -91,12 +91,12 @@ tar -czf doc-server.tar.gz Package.swift Sources/ Dockerfile docker-compose.yml
 
 2. **上传到服务器**
 ```bash
-scp doc-server.tar.gz root@47.100.236.45:/opt/
+scp doc-server.tar.gz root@127.0.0.1:/opt/
 ```
 
 3. **在服务器上部署**
 ```bash
-ssh root@47.100.236.45
+ssh root@127.0.0.1
 cd /opt
 tar -xzf doc-server.tar.gz
 docker-compose up -d --build
@@ -131,11 +131,11 @@ sudo systemctl reload nginx
 ```
 
 3. **配置域名解析**
-将域名 A 记录指向服务器 IP `47.100.236.45`
+将域名 A 记录指向服务器 IP `127.0.0.1`
 
 ## 访问地址
 
-- 直接访问: `http://47.100.236.45:8088`
+- 直接访问: `http://127.0.0.1:8088`
 - 域名访问: `http://docs.yourdomain.com`（配置 Nginx 后）
 
 ## API 接口

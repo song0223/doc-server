@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 快速更新脚本（不使用Docker）
-SERVER="47.100.236.45"
+SERVER="127.0.0.1"
 
 echo "📦 打包更新文件..."
 tar -czf update.tar.gz Package.swift Sources/

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 快速更新脚本 - 只更新代码并重新构建
-SERVER="47.100.236.45"
+SERVER="127.0.0.1"
 REMOTE_DIR="/opt/doc-server"
 
 echo "📦 打包更新文件..."
