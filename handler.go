@@ -283,7 +283,8 @@ func renderEndpointHTML(e *Endpoint) string {
 			}
 			b.WriteString(`</div>`)
 		}
-		b.WriteString(`<pre><code class="json">` + template.HTMLEscapeString(e.ResponseBody) + `</code></pre>`)
+		clean := strings.ReplaceAll(e.ResponseBody, `\/`, `/`)
+		b.WriteString(`<pre><code class="json">` + template.HTMLEscapeString(clean) + `</code></pre>`)
 	}
 
 	// 响应字段
