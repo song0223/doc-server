@@ -91,7 +91,7 @@ tar -czf doc-server.tar.gz Package.swift Sources/ Dockerfile docker-compose.yml
 
 2. **上传到服务器**
 ```bash
-scp doc-server.tar.gz root@127.0.0.1:/opt/
+scp doc-server.tar.gz root@服务器ip:/opt/
 ```
 
 3. **在服务器上部署**
