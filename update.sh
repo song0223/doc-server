@@ -4,7 +4,12 @@
 # ./update.sh
 
 echo "📥 拉取最新代码..."
-git pull
+MAX_RETRY=3
+for i in $(seq 1 $MAX_RETRY); do
+    git pull && break
+    echo "⚠️  拉取失败，${i}/${MAX_RETRY} 次重试..."
+    sleep 3
+done
 
 echo "🔄 重启服务..."
 pkill -f doc-server 2>/dev/null
