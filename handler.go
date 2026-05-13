@@ -40,6 +40,7 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if r.Method == http.MethodPost {
 		password := r.FormValue("password")
 		if password == h.cfg.Auth.Password {
@@ -89,6 +90,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := map[string]interface{}{
 		"Docs": docs,
 	}
@@ -108,6 +110,7 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := map[string]interface{}{
 		"Title":   doc.Title,
 		"Content": template.HTML(doc.HTMLContent),
