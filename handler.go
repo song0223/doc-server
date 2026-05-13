@@ -253,12 +253,6 @@ func renderEndpointHTML(e *Endpoint) string {
 		}
 	}
 
-	// 请求体
-	if e.BodyText != "" {
-		b.WriteString(`<h3>请求体</h3>`)
-		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.BodyText) + `</code></pre>`)
-	}
-
 	// 响应示例
 	if e.ResponseBody != "" {
 		b.WriteString(`<h3>响应示例</h3>`)
