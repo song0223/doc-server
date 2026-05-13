@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"html/template"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -153,10 +154,19 @@ func renderMarkdown(md string) string {
 }
 
 func splitAndRender(md string) []Section {
-	re := regexp.MustCompile(`(?m)^##\s+(.+)$`)
+	// 兼容 \r\n 和 \n，## 后允许0个或多个空格
+	re := regexp.MustCompile(`(?m)^##[ \t]*(.+)$`)
 	locs := re.FindAllStringIndex(md, -1)
 
+	log.Printf("[splitAndRender] content length=%d, found %d h2 headings", len(md), len(locs))
+
 	if len(locs) == 0 {
+		// 打印前 500 字符帮助调试
+		preview := md
+		if len(preview) > 500 {
+			preview = preview[:500]
+		}
+		log.Printf("[splitAndRender] no h2 found, preview: %q", preview)
 		return []Section{{ID: "section-0", Name: "", Content: template.HTML(renderMarkdown(md))}}
 	}
 
@@ -194,6 +204,7 @@ func splitAndRender(md string) []Section {
 			}
 		}
 
+		log.Printf("[splitAndRender] section %d: method=%q name=%q", i, method, name)
 		id := "section-" + strconv.Itoa(i)
 		sections = append(sections, Section{ID: id, Name: name, Method: method, Content: template.HTML(renderMarkdown(chunk))})
 	}
