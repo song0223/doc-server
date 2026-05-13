@@ -122,11 +122,8 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 渲染 Markdown 为 HTML
-	htmlContent := renderMarkdown(doc.HTMLContent)
-
-	// 按 ## 标题拆分为独立 Section
-	sections := splitSections(htmlContent)
+	// 按 Markdown 源码中的 ## 标题拆分，每个 Section 单独渲染
+	sections := splitAndRender(doc.HTMLContent)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := map[string]interface{}{
@@ -154,27 +151,23 @@ func renderMarkdown(md string) string {
 	return htmlStr
 }
 
-func splitSections(htmlContent string) []Section {
-	// 匹配任意 h2 开标签（可能有 id 也可能没有）
-	re := regexp.MustCompile(`(?s)<h2[^>]*>.*?</h2>`)
-	locs := re.FindAllStringIndex(htmlContent, -1)
+func splitAndRender(md string) []Section {
+	re := regexp.MustCompile(`(?m)^##\s+(.+)$`)
+	locs := re.FindAllStringIndex(md, -1)
 
 	if len(locs) == 0 {
-		return []Section{{ID: "", Name: "", Content: template.HTML(htmlContent)}}
+		return []Section{{ID: "section-0", Name: "", Content: template.HTML(renderMarkdown(md))}}
 	}
 
 	var sections []Section
 
-	// h2 之前的内容作为第一个 section（简介）
+	// h2 之前的内容作为简介
 	if locs[0][0] > 0 {
-		intro := strings.TrimSpace(htmlContent[:locs[0][0]])
+		intro := strings.TrimSpace(md[:locs[0][0]])
 		if intro != "" {
-			sections = append(sections, Section{ID: "", Name: "", Content: template.HTML(intro)})
+			sections = append(sections, Section{ID: "", Name: "", Content: template.HTML(renderMarkdown(intro))})
 		}
 	}
-
-	nameRe := regexp.MustCompile(`(?s)<h2[^>]*>(.*?)</h2>`)
-	tagRe := regexp.MustCompile(`<[^>]+>`)
 
 	for i, loc := range locs {
 		start := loc[0]
@@ -182,16 +175,20 @@ func splitSections(htmlContent string) []Section {
 		if i+1 < len(locs) {
 			end = locs[i+1][0]
 		} else {
-			end = len(htmlContent)
+			end = len(md)
 		}
 
-		chunk := strings.TrimSpace(htmlContent[start:end])
+		chunk := strings.TrimSpace(md[start:end])
+
+		// 提取标题文本
+		matches := re.FindStringSubmatch(chunk)
 		name := ""
-		if nm := nameRe.FindStringSubmatch(chunk); len(nm) > 1 {
-			name = strings.TrimSpace(tagRe.ReplaceAllString(nm[1], ""))
+		if len(matches) > 1 {
+			name = strings.TrimSpace(matches[1])
 		}
+
 		id := "section-" + strconv.Itoa(i)
-		sections = append(sections, Section{ID: id, Name: name, Content: template.HTML(chunk)})
+		sections = append(sections, Section{ID: id, Name: name, Content: template.HTML(renderMarkdown(chunk))})
 	}
 
 	return sections
