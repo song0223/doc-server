@@ -7,8 +7,13 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
+
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 )
 
 type Handler struct {
@@ -112,8 +117,8 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 		title = "API 文档"
 	}
 
-	// 获取接口列表
-	endpoints, err := h.db.FetchEndpoints(projectID)
+	// 获取项目下的接口文档列表
+	docs, err := h.db.FetchDocsByProject(projectID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -121,9 +126,9 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	h.templates.ExecuteTemplate(w, "doc-detail.html", map[string]interface{}{
-		"Title":      title,
-		"ProjectID":  projectID,
-		"Endpoints":  endpoints,
+		"Title":     title,
+		"ProjectID": projectID,
+		"Docs":      docs,
 	})
 }
 
@@ -135,14 +140,14 @@ func (h *Handler) EndpointAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endpoint, err := h.db.FetchEndpoint(endpointID)
+	doc, err := h.db.FetchDocByID(endpointID)
 	if err != nil {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(renderEndpointHTML(endpoint)))
+	w.Write([]byte(renderMarkdown(doc.Content)))
 }
 
 func renderEndpointHTML(e *Endpoint) string {
@@ -165,42 +170,52 @@ func renderEndpointHTML(e *Endpoint) string {
 	// 请求参数
 	if e.QueryText != "" {
 		b.WriteString(`<h3>请求参数</h3>`)
-		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.QueryText) + `</code></pre>`)
+		params, _ := url.ParseQuery(e.QueryText)
+		if len(params) > 0 {
+			b.WriteString(`<div class="table-wrapper"><table>`)
+			b.WriteString(`<tr><th>参数名</th><th>值</th></tr>`)
+			for k, vals := range params {
+				b.WriteString(`<tr><td><code>` + template.HTMLEscapeString(k) + `</code></td><td>` + template.HTMLEscapeString(strings.Join(vals, ", ")) + `</td></tr>`)
+			}
+			b.WriteString(`</table></div>`)
+		} else {
+			b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.QueryText) + `</code></pre>`)
+		}
 	}
 
 	// 请求头
 	if e.HeadersText != "" {
 		b.WriteString(`<h3>请求头</h3>`)
-		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.HeadersText) + `</code></pre>`)
+		hasHeaders := false
+		for _, line := range strings.Split(e.HeadersText, "\n") {
+			if strings.Contains(line, ":") {
+				hasHeaders = true
+				break
+			}
+		}
+		if hasHeaders {
+			b.WriteString(`<div class="table-wrapper"><table>`)
+			b.WriteString(`<tr><th>名称</th><th>值</th></tr>`)
+			for _, line := range strings.Split(strings.TrimSpace(e.HeadersText), "\n") {
+				line = strings.TrimSpace(line)
+				if line == "" {
+					continue
+				}
+				parts := strings.SplitN(line, ":", 2)
+				if len(parts) == 2 {
+					b.WriteString(`<tr><td><code>` + template.HTMLEscapeString(strings.TrimSpace(parts[0])) + `</code></td><td>` + template.HTMLEscapeString(strings.TrimSpace(parts[1])) + `</td></tr>`)
+				}
+			}
+			b.WriteString(`</table></div>`)
+		} else {
+			b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.HeadersText) + `</code></pre>`)
+		}
 	}
 
 	// 请求体
 	if e.BodyText != "" {
 		b.WriteString(`<h3>请求体</h3>`)
 		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.BodyText) + `</code></pre>`)
-	}
-
-	// 响应字段
-	if e.ResponseFieldsJSON != "" && e.ResponseFieldsJSON != "[]" {
-		type fieldInfo struct {
-			FieldName   string `json:"fieldName"`
-			FieldType   string `json:"fieldType"`
-			Description string `json:"description"`
-		}
-		var fields []fieldInfo
-		if json.Unmarshal([]byte(e.ResponseFieldsJSON), &fields) == nil && len(fields) > 0 {
-			b.WriteString(`<h3>响应字段</h3>`)
-			b.WriteString(`<div class="table-wrapper"><table>`)
-			b.WriteString(`<tr><th>字段名</th><th>类型</th><th>说明</th></tr>`)
-			for _, f := range fields {
-				b.WriteString(`<tr>`)
-				b.WriteString(`<td><code>` + template.HTMLEscapeString(f.FieldName) + `</code></td>`)
-				b.WriteString(`<td>` + template.HTMLEscapeString(f.FieldType) + `</td>`)
-				b.WriteString(`<td>` + template.HTMLEscapeString(f.Description) + `</td>`)
-				b.WriteString(`</tr>`)
-			}
-			b.WriteString(`</table></div>`)
-		}
 	}
 
 	// 响应示例
@@ -226,6 +241,29 @@ func renderEndpointHTML(e *Endpoint) string {
 		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.ResponseBody) + `</code></pre>`)
 	}
 
+	// 响应字段
+	if e.ResponseFieldsJSON != "" && e.ResponseFieldsJSON != "[]" {
+		type fieldInfo struct {
+			FieldName   string `json:"fieldName"`
+			FieldType   string `json:"fieldType"`
+			Description string `json:"description"`
+		}
+		var fields []fieldInfo
+		if json.Unmarshal([]byte(e.ResponseFieldsJSON), &fields) == nil && len(fields) > 0 {
+			b.WriteString(`<h3>响应字段</h3>`)
+			b.WriteString(`<div class="table-wrapper"><table>`)
+			b.WriteString(`<tr><th>字段名</th><th>类型</th><th>说明</th></tr>`)
+			for _, f := range fields {
+				b.WriteString(`<tr>`)
+				b.WriteString(`<td><code>` + template.HTMLEscapeString(f.FieldName) + `</code></td>`)
+				b.WriteString(`<td>` + template.HTMLEscapeString(f.FieldType) + `</td>`)
+				b.WriteString(`<td>` + template.HTMLEscapeString(f.Description) + `</td>`)
+				b.WriteString(`</tr>`)
+			}
+			b.WriteString(`</table></div>`)
+		}
+	}
+
 	return b.String()
 }
 
@@ -233,4 +271,21 @@ func generateToken() string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+func renderMarkdown(md string) string {
+	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+	p := parser.NewWithExtensions(extensions)
+
+	htmlFlags := html.CommonFlags | html.HrefTargetBlank
+	opts := html.RendererOptions{Flags: htmlFlags}
+	renderer := html.NewRenderer(opts)
+
+	htmlStr := string(markdown.ToHTML([]byte(md), p, renderer))
+	htmlStr = strings.ReplaceAll(htmlStr, "<table>", `<div class="table-wrapper"><table>`)
+	htmlStr = strings.ReplaceAll(htmlStr, "</table>", `</table></div>`)
+	for _, tag := range []string{"<!DOCTYPE html>", "<!doctype html>", "<html>", "</html>", "<head>", "</head>", "<body>", "</body>"} {
+		htmlStr = strings.ReplaceAll(htmlStr, tag, "")
+	}
+	return htmlStr
 }
