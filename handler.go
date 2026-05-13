@@ -315,22 +315,8 @@ func renderEndpointHTML(e *Endpoint) string {
 
 func highlightJSON(s string) string {
 	s = template.HTMLEscapeString(s)
-	// key: "key":
-	re := regexp.MustCompile(`"([^"\\]*(\\.[^"\\]*)*)"\s*:`)
-	s = re.ReplaceAllString(s, `<span class="jkey">"$1"</span>:`)
-	// string value: "value"
-	re2 := regexp.MustCompile(`:\s*"([^"\\]*(\\.[^"\\]*)*)"`)
-	s = re2.ReplaceAllString(s, `: <span class="jstr">"$1"</span>`)
-	// array string values
-	re3 := regexp.MustCompile(`(?m)^(\s*)"([^"\\]*(\\.[^"\\]*)*)"`)
-	s = re3.ReplaceAllString(s, `$1<span class="jstr">"$2"</span>`)
-	// numbers
-	re4 := regexp.MustCompile(`:\s*(-?\d+\.?\d*)\b`)
-	s = re4.ReplaceAllString(s, `: <span class="jnum">$1</span>`)
-	// booleans and null
-	s = strings.ReplaceAll(s, `: true`, `: <span class="jbool">true</span>`)
-	s = strings.ReplaceAll(s, `: false`, `: <span class="jbool">false</span>`)
-	s = strings.ReplaceAll(s, `: null`, `: <span class="jnull">null</span>`)
+	re := regexp.MustCompile(`&quot;([^&]*?)&quot;\s*:`)
+	s = re.ReplaceAllString(s, `<span class="jkey">&quot;$1&quot;</span>:`)
 	return s
 }
 
