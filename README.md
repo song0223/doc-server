@@ -72,15 +72,25 @@ swift run
 
 ### 方式一：使用部署脚本（推荐）
 
+1. **在服务器上克隆代码**
 ```bash
+cd /opt
+git clone https://github.com/song0223/doc-server.git
+cd doc-server
+```
+
+2. **执行部署脚本**
+```bash
+# 使用 Docker
 ./deploy.sh
+
+# 不使用 Docker
+./deploy-no-docker.sh
 ```
 
 脚本会自动：
-1. SSH 连接到服务器
-2. 克隆或更新代码（git pull）
-3. 安装 Docker（如果需要）
-4. 构建并启动服务
+1. 安装 Docker（如果需要）
+2. 构建并启动服务
 
 ### 方式二：手动部署
 
@@ -110,6 +120,7 @@ swift build -c release
 
 ### 更新服务器
 
+在服务器的项目目录下执行：
 ```bash
 # 使用 Docker
 ./update.sh
