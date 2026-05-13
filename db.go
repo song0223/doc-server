@@ -11,6 +11,7 @@ type DocRecord struct {
 	ID        string
 	ProjectID string
 	Title     string
+	Content   string
 }
 
 type Endpoint struct {
@@ -58,9 +59,9 @@ func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
-// FetchAllDocs 获取所有项目列表
+// FetchAllDocs 获取所有项目列表（按 project_id 分组）
 func (db *DB) FetchAllDocs() ([]DocRecord, error) {
-	rows, err := db.conn.Query("SELECT id, project_id, title FROM api_documents ORDER BY title")
+	rows, err := db.conn.Query("SELECT DISTINCT project_id, title FROM api_documents ORDER BY title")
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,43 @@ func (db *DB) FetchAllDocs() ([]DocRecord, error) {
 	var docs []DocRecord
 	for rows.Next() {
 		var doc DocRecord
-		if err := rows.Scan(&doc.ID, &doc.ProjectID, &doc.Title); err != nil {
+		if err := rows.Scan(&doc.ProjectID, &doc.Title); err != nil {
+			return nil, err
+		}
+		doc.ID = doc.ProjectID
+		docs = append(docs, doc)
+	}
+	return docs, nil
+}
+
+// FetchDocByID 根据接口 ID 获取文档
+func (db *DB) FetchDocByID(id string) (*DocRecord, error) {
+	var doc DocRecord
+	err := db.conn.QueryRow(
+		"SELECT id, project_id, title, html_content FROM api_documents WHERE id = ? LIMIT 1",
+		id,
+	).Scan(&doc.ID, &doc.ProjectID, &doc.Title, &doc.Content)
+	if err != nil {
+		return nil, err
+	}
+	return &doc, nil
+}
+
+// FetchDocsByProject 获取项目下所有接口文档
+func (db *DB) FetchDocsByProject(projectID string) ([]DocRecord, error) {
+	rows, err := db.conn.Query(
+		"SELECT id, project_id, title, html_content FROM api_documents WHERE project_id = ? ORDER BY title",
+		projectID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var docs []DocRecord
+	for rows.Next() {
+		var doc DocRecord
+		if err := rows.Scan(&doc.ID, &doc.ProjectID, &doc.Title, &doc.Content); err != nil {
 			return nil, err
 		}
 		docs = append(docs, doc)
