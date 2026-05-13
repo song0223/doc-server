@@ -21,9 +21,10 @@ type Handler struct {
 	sessions  sync.Map // token -> true
 }
 
-type NavItem struct {
-	ID   string
-	Name string
+type Section struct {
+	ID      string
+	Name    string
+	Content template.HTML
 }
 
 func NewHandler(db *DB, cfg *Config) *Handler {
@@ -123,14 +124,13 @@ func (h *Handler) Doc(w http.ResponseWriter, r *http.Request) {
 	// 渲染 Markdown 为 HTML
 	htmlContent := renderMarkdown(doc.HTMLContent)
 
-	// 提取导航
-	navItems := extractNav(doc.HTMLContent)
+	// 按 ## 标题拆分为独立 Section
+	sections := splitSections(htmlContent)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := map[string]interface{}{
-		"Title":   doc.Title,
-		"Content": template.HTML(htmlContent),
-		"Nav":     navItems,
+		"Title":    doc.Title,
+		"Sections": sections,
 	}
 	h.templates.ExecuteTemplate(w, "doc-detail.html", data)
 }
@@ -153,22 +153,49 @@ func renderMarkdown(md string) string {
 	return htmlStr
 }
 
-func extractNav(md string) []NavItem {
-	var items []NavItem
-	re := regexp.MustCompile(`^##\s+(.+)$`)
+func splitSections(htmlContent string) []Section {
+	re := regexp.MustCompile(`(?s)(<h2[^>]*id="([^"]*)"[^>]*>.*?</h2>)`)
+	locs := re.FindAllStringIndex(htmlContent, -1)
 
-	for _, line := range strings.Split(md, "\n") {
-		matches := re.FindStringSubmatch(strings.TrimSpace(line))
-		if len(matches) > 1 {
-			name := matches[1]
-			id := strings.ToLower(name)
-			id = strings.ReplaceAll(id, " ", "-")
-			id = regexp.MustCompile(`[^a-z0-9-]`).ReplaceAllString(id, "")
-			items = append(items, NavItem{ID: id, Name: name})
+	if len(locs) == 0 {
+		return []Section{{ID: "", Name: "", Content: template.HTML(htmlContent)}}
+	}
+
+	var sections []Section
+
+	// h2 之前的内容作为第一个 section（简介）
+	if locs[0][0] > 0 {
+		intro := strings.TrimSpace(htmlContent[:locs[0][0]])
+		if intro != "" {
+			sections = append(sections, Section{ID: "", Name: "", Content: template.HTML(intro)})
 		}
 	}
 
-	return items
+	for i, loc := range locs {
+		start := loc[0]
+		var end int
+		if i+1 < len(locs) {
+			end = locs[i+1][0]
+		} else {
+			end = len(htmlContent)
+		}
+
+		chunk := strings.TrimSpace(htmlContent[start:end])
+		matches := re.FindStringSubmatch(chunk)
+		name := ""
+		id := ""
+		if len(matches) > 2 {
+			id = matches[2]
+			// 从 h2 标签中提取纯文本名称
+			nameRe := regexp.MustCompile(`(?s)<h2[^>]*>(.*?)</h2>`)
+			if nm := nameRe.FindStringSubmatch(chunk); len(nm) > 1 {
+				name = strings.TrimSpace(regexp.MustCompile(`<[^>]+>`).ReplaceAllString(nm[1], ""))
+			}
+		}
+		sections = append(sections, Section{ID: id, Name: name, Content: template.HTML(chunk)})
+	}
+
+	return sections
 }
 
 func generateToken() string {

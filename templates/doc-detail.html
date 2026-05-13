@@ -300,8 +300,8 @@
             </div>
             <div class="nav-scroll">
                 <ul class="nav-list" id="navList">
-                    {{range .Nav}}
-                    <li><a href="#{{.ID}}">{{.Name}}</a></li>
+                    {{range $i, $s := .Sections}}
+                    {{if $s.ID}}<li><a href="#" data-index="{{$i}}" class="{{if eq $i 0}}active{{end}}">{{$s.Name}}</a></li>{{end}}
                     {{end}}
                 </ul>
             </div>
@@ -315,8 +315,12 @@
             <div class="mobile-title">{{.Title}}</div>
         </div>
 
-        <main class="content">
-            {{.Content}}
+        <main class="content" id="contentArea">
+            {{range $i, $s := .Sections}}
+            <div class="section" id="section-{{$i}}" style="{{if ne $i 0}}display:none{{end}}">
+                {{$s.Content}}
+            </div>
+            {{end}}
         </main>
     </div>
     <script>
@@ -335,43 +339,27 @@
             }
         });
 
-        // 平滑滚动 + 选中状态
+        // 切换接口：点击导航项显示对应 section
         document.querySelectorAll('.nav-list a').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                const index = this.getAttribute('data-index');
+                // 隐藏所有 section，显示目标
+                document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+                const target = document.getElementById('section-' + index);
+                if (target) target.style.display = '';
+                // 更新选中状态
                 document.querySelectorAll('.nav-list a').forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
+                // 滚动到内容区顶部
+                document.getElementById('contentArea').scrollTop = 0;
+                window.scrollTo(0, 0);
             });
         });
 
-        // 滚动时自动高亮当前章节
-        const headings = [];
-        document.querySelectorAll('.nav-list a').forEach(a => {
-            const id = a.getAttribute('href').slice(1);
-            const el = document.getElementById(id);
-            if (el) headings.push({ el, link: a });
-        });
-
-        let ticking = false;
-        window.addEventListener('scroll', function() {
-            if (ticking) return;
-            ticking = true;
-            requestAnimationFrame(() => {
-                let current = headings[0];
-                for (const h of headings) {
-                    if (h.el.getBoundingClientRect().top <= 80) current = h;
-                }
-                if (current) {
-                    document.querySelectorAll('.nav-list a').forEach(l => l.classList.remove('active'));
-                    current.link.classList.add('active');
-                }
-                ticking = false;
-            });
-        });
+        // 默认选中第一个有内容的导航项
+        const firstNav = document.querySelector('.nav-list a');
+        if (firstNav) firstNav.classList.add('active');
     </script>
 </body>
 </html>
