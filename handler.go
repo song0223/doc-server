@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 )
@@ -146,6 +145,35 @@ func (h *Handler) EndpointAPI(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(renderEndpointHTML(endpoint)))
 }
 
+type paramInfo struct {
+	Name        string `json:"name"`
+	Value       string `json:"value"`
+	Description string `json:"description"`
+	Required    bool   `json:"required"`
+}
+
+func renderParamsTable(params []paramInfo) string {
+	var b strings.Builder
+	b.WriteString(`<div class="table-wrapper"><table>`)
+	b.WriteString(`<tr><th>参数名</th><th>值</th><th>说明</th><th>必填</th></tr>`)
+	for _, p := range params {
+		req := ""
+		if p.Required {
+			req = `<span style="color:#c62828">是</span>`
+		} else {
+			req = "否"
+		}
+		b.WriteString(`<tr>`)
+		b.WriteString(`<td><code>` + template.HTMLEscapeString(p.Name) + `</code></td>`)
+		b.WriteString(`<td>` + template.HTMLEscapeString(p.Value) + `</td>`)
+		b.WriteString(`<td>` + template.HTMLEscapeString(p.Description) + `</td>`)
+		b.WriteString(`<td>` + req + `</td>`)
+		b.WriteString(`</tr>`)
+	}
+	b.WriteString(`</table></div>`)
+	return b.String()
+}
+
 func renderEndpointHTML(e *Endpoint) string {
 	var b strings.Builder
 
@@ -166,14 +194,9 @@ func renderEndpointHTML(e *Endpoint) string {
 	// 请求参数
 	if e.QueryText != "" {
 		b.WriteString(`<h3>请求参数</h3>`)
-		params, _ := url.ParseQuery(e.QueryText)
-		if len(params) > 0 {
-			b.WriteString(`<div class="table-wrapper"><table>`)
-			b.WriteString(`<tr><th>参数名</th><th>值</th></tr>`)
-			for k, vals := range params {
-				b.WriteString(`<tr><td><code>` + template.HTMLEscapeString(k) + `</code></td><td>` + template.HTMLEscapeString(strings.Join(vals, ", ")) + `</td></tr>`)
-			}
-			b.WriteString(`</table></div>`)
+		var params []paramInfo
+		if json.Unmarshal([]byte(e.QueryText), &params) == nil && len(params) > 0 {
+			b.WriteString(renderParamsTable(params))
 		} else {
 			b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.QueryText) + `</code></pre>`)
 		}
@@ -205,6 +228,17 @@ func renderEndpointHTML(e *Endpoint) string {
 			b.WriteString(`</table></div>`)
 		} else {
 			b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.HeadersText) + `</code></pre>`)
+		}
+	}
+
+	// 请求体
+	if e.BodyText != "" {
+		b.WriteString(`<h3>请求体</h3>`)
+		var params []paramInfo
+		if json.Unmarshal([]byte(e.BodyText), &params) == nil && len(params) > 0 {
+			b.WriteString(renderParamsTable(params))
+		} else {
+			b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.BodyText) + `</code></pre>`)
 		}
 	}
 
