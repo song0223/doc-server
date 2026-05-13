@@ -148,14 +148,16 @@ func (h *Handler) EndpointAPI(w http.ResponseWriter, r *http.Request) {
 type paramInfo struct {
 	Name        string `json:"name"`
 	Value       string `json:"value"`
+	Type        string `json:"type"`
 	Description string `json:"description"`
 	Required    bool   `json:"required"`
+	FilePath    string `json:"filePath"`
 }
 
 func renderParamsTable(params []paramInfo) string {
 	var b strings.Builder
 	b.WriteString(`<div class="table-wrapper"><table>`)
-	b.WriteString(`<tr><th>参数名</th><th>值</th><th>说明</th><th>必填</th></tr>`)
+	b.WriteString(`<tr><th>参数名</th><th>类型</th><th>值</th><th>说明</th><th>必填</th></tr>`)
 	for _, p := range params {
 		req := ""
 		if p.Required {
@@ -163,9 +165,18 @@ func renderParamsTable(params []paramInfo) string {
 		} else {
 			req = "否"
 		}
+		val := p.Value
+		if p.Type == "file" && p.FilePath != "" {
+			val = p.Name + " (" + p.FilePath + ")"
+		}
+		typ := p.Type
+		if typ == "" {
+			typ = "string"
+		}
 		b.WriteString(`<tr>`)
 		b.WriteString(`<td><code>` + template.HTMLEscapeString(p.Name) + `</code></td>`)
-		b.WriteString(`<td>` + template.HTMLEscapeString(p.Value) + `</td>`)
+		b.WriteString(`<td>` + template.HTMLEscapeString(typ) + `</td>`)
+		b.WriteString(`<td>` + template.HTMLEscapeString(val) + `</td>`)
 		b.WriteString(`<td>` + template.HTMLEscapeString(p.Description) + `</td>`)
 		b.WriteString(`<td>` + req + `</td>`)
 		b.WriteString(`</tr>`)
@@ -192,7 +203,7 @@ func renderEndpointHTML(e *Endpoint) string {
 	}
 
 	// 请求参数
-	if e.QueryText != "" {
+	if e.QueryText != "" && e.QueryText != "[]" {
 		b.WriteString(`<h3>请求参数</h3>`)
 		var params []paramInfo
 		if json.Unmarshal([]byte(e.QueryText), &params) == nil && len(params) > 0 {
@@ -232,7 +243,7 @@ func renderEndpointHTML(e *Endpoint) string {
 	}
 
 	// 请求体
-	if e.BodyText != "" {
+	if e.BodyText != "" && e.BodyText != "[]" {
 		b.WriteString(`<h3>请求体</h3>`)
 		var params []paramInfo
 		if json.Unmarshal([]byte(e.BodyText), &params) == nil && len(params) > 0 {
