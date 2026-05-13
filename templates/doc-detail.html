@@ -17,8 +17,8 @@
 
         /* ===== 侧边栏 ===== */
         .sidebar {
-            width: 272px;
-            min-width: 272px;
+            width: 280px;
+            min-width: 280px;
             background: #fff;
             border-right: 1px solid #e5e5ea;
             position: fixed;
@@ -67,9 +67,7 @@
             box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
             background: #fff;
         }
-        .search-box {
-            position: relative;
-        }
+        .search-box { position: relative; }
         .search-box svg {
             position: absolute;
             left: 9px;
@@ -87,31 +85,50 @@
         }
         .nav-scroll::-webkit-scrollbar { width: 4px; }
         .nav-scroll::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 4px; }
-        .nav-list {
-            list-style: none;
-        }
+        .nav-list { list-style: none; }
         .nav-list li { margin-bottom: 1px; }
         .nav-list a {
-            display: block;
-            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
             color: #6e6e73;
             text-decoration: none;
             font-size: 13px;
             border-radius: 8px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             transition: background 0.15s, color 0.15s;
             line-height: 1.4;
         }
         .nav-list a:hover { background: #f5f5f7; color: #1d1d1f; }
         .nav-list a.active { background: #0071e3; color: #fff; font-weight: 500; }
+        .nav-list a.active .method-badge { opacity: 0.9; }
+
+        /* HTTP 方法标签 */
+        .method-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+        .method-GET    { background: #e8f5e9; color: #2e7d32; }
+        .method-POST   { background: #e3f2fd; color: #1565c0; }
+        .method-PUT    { background: #fff3e0; color: #e65100; }
+        .method-DELETE { background: #ffebee; color: #c62828; }
+        .method-PATCH  { background: #f3e5f5; color: #7b1fa2; }
+        .nav-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
         /* ===== 内容区 ===== */
         .content {
-            margin-left: 272px;
+            margin-left: 280px;
             padding: 32px 48px 64px;
-            max-width: 960px;
             overflow-x: hidden;
         }
 
@@ -154,14 +171,16 @@
             color: #f5f5f7;
             padding: 16px 20px;
             border-radius: 10px;
-            overflow-x: auto;
             margin: 16px 0;
             font-size: 13px;
             line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
-        pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+        pre code { background: none; color: inherit; padding: 0; font-size: inherit; word-break: normal; }
 
-        /* ===== 表格 — 核心修复 ===== */
+        /* ===== 表格 ===== */
         .table-wrapper {
             overflow-x: auto;
             margin: 16px 0;
@@ -214,8 +233,7 @@
         td.truncate::after {
             content: '';
             display: inline-block;
-            width: 0;
-            height: 0;
+            width: 0; height: 0;
             border-left: 4px solid transparent;
             border-right: 4px solid transparent;
             border-top: 5px solid #86868b;
@@ -301,7 +319,7 @@
             <div class="nav-scroll">
                 <ul class="nav-list" id="navList">
                     {{range $i, $s := .Sections}}
-                    {{if $s.ID}}<li><a href="#" data-index="{{$i}}" class="{{if eq $i 0}}active{{end}}">{{$s.Name}}</a></li>{{end}}
+                    {{if $s.ID}}<li><a href="#" data-index="{{$i}}" {{if eq $i 0}}class="active"{{end}}>{{if $s.Method}}<span class="method-badge method-{{$s.Method}}">{{$s.Method}}</span>{{end}}<span class="nav-name">{{$s.Name}}</span></a></li>{{end}}
                     {{end}}
                 </ul>
             </div>
@@ -317,7 +335,7 @@
 
         <main class="content" id="contentArea">
             {{range $i, $s := .Sections}}
-            <div class="section" id="section-{{$i}}" style="{{if ne $i 0}}display:none{{end}}">
+            <div class="section" id="section-{{$i}}" {{if ne $i 0}}style="display:none"{{end}}>
                 {{$s.Content}}
             </div>
             {{end}}
@@ -344,22 +362,14 @@
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const index = this.getAttribute('data-index');
-                // 隐藏所有 section，显示目标
                 document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
                 const target = document.getElementById('section-' + index);
                 if (target) target.style.display = '';
-                // 更新选中状态
                 document.querySelectorAll('.nav-list a').forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
-                // 滚动到内容区顶部
-                document.getElementById('contentArea').scrollTop = 0;
                 window.scrollTo(0, 0);
             });
         });
-
-        // 默认选中第一个有内容的导航项
-        const firstNav = document.querySelector('.nav-list a');
-        if (firstNav) firstNav.classList.add('active');
     </script>
 </body>
 </html>

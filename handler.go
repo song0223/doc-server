@@ -25,6 +25,7 @@ type Handler struct {
 type Section struct {
 	ID      string
 	Name    string
+	Method  string // GET, POST, PUT, DELETE 等
 	Content template.HTML
 }
 
@@ -169,6 +170,8 @@ func splitAndRender(md string) []Section {
 		}
 	}
 
+	methodRe := regexp.MustCompile(`(?i)^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)\b`)
+
 	for i, loc := range locs {
 		start := loc[0]
 		var end int
@@ -183,12 +186,16 @@ func splitAndRender(md string) []Section {
 		// 提取标题文本
 		matches := re.FindStringSubmatch(chunk)
 		name := ""
+		method := ""
 		if len(matches) > 1 {
 			name = strings.TrimSpace(matches[1])
+			if mm := methodRe.FindStringSubmatch(name); len(mm) > 1 {
+				method = strings.ToUpper(mm[1])
+			}
 		}
 
 		id := "section-" + strconv.Itoa(i)
-		sections = append(sections, Section{ID: id, Name: name, Content: template.HTML(renderMarkdown(chunk))})
+		sections = append(sections, Section{ID: id, Name: name, Method: method, Content: template.HTML(renderMarkdown(chunk))})
 	}
 
 	return sections
