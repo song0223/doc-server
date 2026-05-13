@@ -36,35 +36,48 @@ go run .
 
 ## 部署
 
-### 1. 交叉编译
+### 1. 发布（本地 Mac 执行）
 
 ```bash
-# Mac 上编译 Linux 版本
-GOOS=linux GOARCH=amd64 go build -o doc-server .
+./release.sh
 ```
 
-### 2. 上传到服务器
+自动编译 Linux 版本并提交到 git。
+
+### 2. 更新（服务器执行）
 
 ```bash
-scp doc-server config.yaml root@服务器ip:/opt/doc-server/
+./update.sh
 ```
 
-### 3. 运行
+自动拉取代码并重启服务。
 
+## 配置 Nginx 反向代理
+
+1. 安装 Nginx
 ```bash
-cd /opt/doc-server
-chmod +x doc-server
-./doc-server
+# CentOS
+yum install -y nginx
+
+# Ubuntu
+apt-get install -y nginx
 ```
 
-## 更新
-
+2. 复制配置文件
 ```bash
-cd /opt/doc-server
-git pull
-GOOS=linux GOARCH=amd64 go build -o doc-server .
-pkill -f doc-server
-nohup ./doc-server > doc-server.log 2>&1 &
+cp nginx.conf /etc/nginx/conf.d/doc-server.conf
+# 编辑配置文件，把 your-domain.com 改成你的域名
+```
+
+3. 重启 Nginx
+```bash
+systemctl restart nginx
+systemctl enable nginx
+```
+
+4. 访问
+```
+http://你的域名
 ```
 
 ## API 接口
