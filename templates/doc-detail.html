@@ -191,6 +191,17 @@
         }
         .copy-btn:hover { background: #0071e3; color: #fff; }
         .copy-btn:active { transform: scale(0.96); }
+        .ep-url-full {
+            margin-bottom: 16px;
+            padding: 0 14px;
+        }
+        .ep-url-full code {
+            font-size: 12px;
+            color: #86868b;
+            background: none;
+            padding: 0;
+            word-break: break-all;
+        }
         .ep-desc {
             margin-bottom: 16px;
             color: #6e6e73;
@@ -347,12 +358,12 @@
         </main>
     </div>
     <script>
-        // 复制 URL
+        // 复制完整 URL
         function copyUrl() {
-            const el = document.getElementById('epUrl');
-            if (!el) return;
-            navigator.clipboard.writeText(el.textContent).then(() => {
-                const btn = el.nextElementSibling;
+            const fullEl = document.querySelector('.ep-url-full code');
+            const btn = document.querySelector('.copy-btn');
+            if (!fullEl || !btn) return;
+            navigator.clipboard.writeText(fullEl.textContent).then(() => {
                 btn.textContent = '已复制';
                 setTimeout(() => btn.textContent = '复制', 1500);
             });
