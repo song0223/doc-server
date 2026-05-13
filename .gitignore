@@ -4,6 +4,9 @@
 *.out
 vendor/
 
+# Claude
+CLAUDE.md
+
 # IDE
 .idea/
 .vscode/
