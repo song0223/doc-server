@@ -14,18 +14,19 @@ type DocRecord struct {
 }
 
 type Endpoint struct {
-	ID                 string
-	ProjectID          string
-	Name               string
-	Method             string
-	URL                string
-	Description        string
-	QueryText          string
-	HeadersText        string
-	BodyText           string
-	ResponseBody       string
-	ResponseStatusCode int
-	ResponseDuration   float64
+	ID                  string
+	ProjectID           string
+	Name                string
+	Method              string
+	URL                 string
+	Description         string
+	QueryText           string
+	HeadersText         string
+	BodyText            string
+	ResponseBody        string
+	ResponseFieldsJSON  string
+	ResponseStatusCode  int
+	ResponseDuration    float64
 }
 
 type DB struct {
@@ -91,7 +92,7 @@ func (db *DB) FetchEndpoints(projectID string) ([]Endpoint, error) {
 	rows, err := db.conn.Query(
 		`SELECT id, project_id, name, method, url_string,
 		 COALESCE(description,''), COALESCE(query_text,''), COALESCE(headers_text,''),
-		 COALESCE(body_text,''), COALESCE(response_body,''),
+		 COALESCE(body_text,''), COALESCE(response_body,''), COALESCE(response_fields_json,''),
 		 COALESCE(response_status_code,0), COALESCE(response_duration,0)
 		 FROM request_documents WHERE project_id = ? ORDER BY created_at`,
 		projectID,
@@ -107,7 +108,7 @@ func (db *DB) FetchEndpoints(projectID string) ([]Endpoint, error) {
 		if err := rows.Scan(
 			&e.ID, &e.ProjectID, &e.Name, &e.Method, &e.URL,
 			&e.Description, &e.QueryText, &e.HeadersText,
-			&e.BodyText, &e.ResponseBody,
+			&e.BodyText, &e.ResponseBody, &e.ResponseFieldsJSON,
 			&e.ResponseStatusCode, &e.ResponseDuration,
 		); err != nil {
 			return nil, err
@@ -123,14 +124,14 @@ func (db *DB) FetchEndpoint(endpointID string) (*Endpoint, error) {
 	err := db.conn.QueryRow(
 		`SELECT id, project_id, name, method, url_string,
 		 COALESCE(description,''), COALESCE(query_text,''), COALESCE(headers_text,''),
-		 COALESCE(body_text,''), COALESCE(response_body,''),
+		 COALESCE(body_text,''), COALESCE(response_body,''), COALESCE(response_fields_json,''),
 		 COALESCE(response_status_code,0), COALESCE(response_duration,0)
 		 FROM request_documents WHERE id = ?`,
 		endpointID,
 	).Scan(
 		&e.ID, &e.ProjectID, &e.Name, &e.Method, &e.URL,
 		&e.Description, &e.QueryText, &e.HeadersText,
-		&e.BodyText, &e.ResponseBody,
+		&e.BodyText, &e.ResponseBody, &e.ResponseFieldsJSON,
 		&e.ResponseStatusCode, &e.ResponseDuration,
 	)
 	if err != nil {

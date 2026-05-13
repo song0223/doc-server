@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -179,7 +180,30 @@ func renderEndpointHTML(e *Endpoint) string {
 		b.WriteString(`<pre><code>` + template.HTMLEscapeString(e.BodyText) + `</code></pre>`)
 	}
 
-	// 响应
+	// 响应字段
+	if e.ResponseFieldsJSON != "" && e.ResponseFieldsJSON != "[]" {
+		type fieldInfo struct {
+			FieldName   string `json:"fieldName"`
+			FieldType   string `json:"fieldType"`
+			Description string `json:"description"`
+		}
+		var fields []fieldInfo
+		if json.Unmarshal([]byte(e.ResponseFieldsJSON), &fields) == nil && len(fields) > 0 {
+			b.WriteString(`<h3>响应字段</h3>`)
+			b.WriteString(`<div class="table-wrapper"><table>`)
+			b.WriteString(`<tr><th>字段名</th><th>类型</th><th>说明</th></tr>`)
+			for _, f := range fields {
+				b.WriteString(`<tr>`)
+				b.WriteString(`<td><code>` + template.HTMLEscapeString(f.FieldName) + `</code></td>`)
+				b.WriteString(`<td>` + template.HTMLEscapeString(f.FieldType) + `</td>`)
+				b.WriteString(`<td>` + template.HTMLEscapeString(f.Description) + `</td>`)
+				b.WriteString(`</tr>`)
+			}
+			b.WriteString(`</table></div>`)
+		}
+	}
+
+	// 响应示例
 	if e.ResponseBody != "" {
 		b.WriteString(`<h3>响应示例</h3>`)
 		if e.ResponseStatusCode > 0 {
