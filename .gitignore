@@ -21,3 +21,6 @@ Thumbs.db
 *.tar.gz
 *.zip
 *.log
+
+# Server config (contains SSH credentials)
+server.conf

@@ -1,0 +1,5 @@
+# 服务器连接配置（此文件不会被提交到 git）
+# 复制 server.conf.example 并填入你的服务器信息
+
+SSH_HOST=root@你的服务器IP
+REMOTE_PATH=/path/to/doc-server
