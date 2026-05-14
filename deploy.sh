@@ -4,7 +4,7 @@
 # 在服务器上直接执行: ./deploy.sh
 
 # 确保 remote 指向 Gitee（国内服务器拉取更快）
-GITEE_REMOTE="git@gitee.com:song0223/doc-server.git"
+GITEE_REMOTE="https://gitee.com/song0223/doc-server.git"
 CURRENT_REMOTE=$(git remote get-url origin 2>/dev/null)
 
 if [ "$CURRENT_REMOTE" != "$GITEE_REMOTE" ]; then
