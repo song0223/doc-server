@@ -368,9 +368,9 @@
     </div>
     <script>
         function copyUrl(btn) {
-            const fullEl = btn.closest('.ep-url').nextElementSibling.querySelector('code');
-            if (!fullEl) return;
-            const text = fullEl.textContent;
+            const codeEl = btn.parentNode.querySelector('code');
+            if (!codeEl) return;
+            const text = codeEl.textContent;
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => {
                     btn.textContent = '成功';
