@@ -367,15 +367,27 @@
         </main>
     </div>
     <script>
-        // 复制完整 URL
-        function copyUrl() {
-            const fullEl = document.querySelector('.ep-url-full code');
-            const btn = document.querySelector('.copy-btn');
-            if (!fullEl || !btn) return;
-            navigator.clipboard.writeText(fullEl.textContent).then(() => {
-                btn.textContent = '已复制';
+        function copyUrl(btn) {
+            const fullEl = btn.closest('.ep-url').nextElementSibling.querySelector('code');
+            if (!fullEl) return;
+            const text = fullEl.textContent;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    btn.textContent = '成功';
+                    setTimeout(() => btn.textContent = '复制', 1500);
+                });
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                btn.textContent = '成功';
                 setTimeout(() => btn.textContent = '复制', 1500);
-            });
+            }
         }
 
         // 搜索过滤

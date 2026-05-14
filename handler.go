@@ -202,7 +202,7 @@ func renderEndpointHTML(e *Endpoint) string {
 		urlPath = u.Path
 	}
 	b.WriteString(`<div class="ep-url">`)
-	b.WriteString(`<button class="copy-btn" onclick="copyUrl()">复制</button>`)
+	b.WriteString(`<button class="copy-btn" onclick="copyUrl(this)">复制</button>`)
 	b.WriteString(`<code id="epUrl">` + template.HTMLEscapeString(urlPath) + `</code>`)
 	b.WriteString(`</div>`)
 	b.WriteString(`<div class="ep-url-full"><code>` + template.HTMLEscapeString(e.URL) + `</code></div>`)
